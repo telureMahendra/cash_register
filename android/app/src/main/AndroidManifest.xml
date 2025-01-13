@@ -1,4 +1,7 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    
+>
+
 
     <uses-permission android:name="com.pos.permission.CARD_READER_MAG" />
     <uses-permission android:name="com.pos.permission.CARD_READER_ICC" />
@@ -8,21 +11,29 @@
     <uses-permission android:name="com.pos.permission.ACCESSORY_LED" />
     <uses-permission android:name="com.pos.permission.ACCESSORY_BEEP" />
     <uses-permission android:name="com.pos.permission.ACCESSORY_RFREGISTER" />
-    <uses-permission android:name="com.pos.permission.CARD_READER_ICC" />
-    <uses-permission android:name="com.pos.permission.CARD_READER_PICC" />
-    <uses-permission android:name="com.pos.permission.CARD_READER_MAG" />
     <uses-permission android:name="com.pos.permission.COMMUNICATION" />
-    <uses-permission android:name="com.pos.permission.PRINTER" />
     <uses-permission android:name="com.pos.permission.SECURITY" />
     <uses-permission android:name="com.pos.permission.EMVCORE" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
 
 
+       
 
     <application
         android:label="cash_register"
-        android:name="${applicationName}"
+        android:name=".MainApplication"
         android:icon="@mipmap/ic_launcher">
+
+<uses-library
+            android:name="com.odm"
+            android:required="false" />
+        <uses-library
+            android:name="com.pos.sdk"
+            android:required="false" />
+
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -32,6 +43,8 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
+
+             
             <!-- Specifies an Android theme to apply to this Activity as soon as
                  the Android process has started. This theme is visible to the user
                  while the Flutter UI initializes. After that, this theme continues

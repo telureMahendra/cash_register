@@ -8,6 +8,7 @@ import 'package:cash_register/my_home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/placeholder.dart';
+import 'package:lottie/lottie.dart';
 
 import 'Widgets/button.dart';
 
@@ -29,6 +30,8 @@ class _SignUpState extends State<SignUp> {
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   bool _obscureText = true;
+
+  FontSize fs = FontSize();
 
   @override
   void dispose() {
@@ -80,12 +83,38 @@ class _SignUpState extends State<SignUp> {
 
           showDialog<void>(
             context: context,
+            barrierDismissible: false,
             builder: (context) => AlertDialog(
-              title: const Text('Error'),
-              content: Text(response.body.toString()),
+              // title: const Text('Error'),
+
+              insetPadding: EdgeInsets.all(0),
+              content: Container(
+                height: 220,
+                padding: EdgeInsets.all(2),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Lottie.asset('assets/animations/warning.json',
+                        height: MediaQuery.of(context).size.height * 0.17,
+                        // controller: _controller,
+                        repeat: true,
+                        animate: true),
+                    Text(
+                      '${response.body.toString()}',
+                      style: TextStyle(
+                          fontSize: fs.getadaptiveTextSize(context, 15)),
+                    ),
+                  ],
+                ),
+              ),
               actions: [
                 TextButton(
-                  child: const Text('Ok'),
+                  style: TextButton.styleFrom(),
+                  child: Text(
+                    'Ok',
+                    style: TextStyle(
+                        fontSize: fs.getadaptiveTextSize(context, 20)),
+                  ),
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
@@ -93,6 +122,23 @@ class _SignUpState extends State<SignUp> {
               ],
             ),
           );
+          sleep(Duration(seconds: 1));
+
+          // showDialog<void>(
+          //   context: context,
+          //   builder: (context) => AlertDialog(
+          //     title: const Text('Error'),
+          //     content: Text(response.body.toString()),
+          //     actions: [
+          //       TextButton(
+          //         child: const Text('Ok'),
+          //         onPressed: () {
+          //           Navigator.of(context).pop();
+          //         },
+          //       ),
+          //     ],
+          //   ),
+          // );
         }
       } on SocketException catch (e) {
         // Handle network errors
@@ -100,8 +146,26 @@ class _SignUpState extends State<SignUp> {
         showDialog<void>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text('Network Error'),
+            // title: const Text('Error'),
+            content: Container(
+              height: 220,
+              padding: EdgeInsets.all(2),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Lottie.asset('assets/animations/warning.json',
+                      height: MediaQuery.of(context).size.height * 0.17,
+                      // controller: _controller,
+                      repeat: true,
+                      animate: true),
+                  Text(
+                    'Network Error',
+                    style: TextStyle(
+                        fontSize: fs.getadaptiveTextSize(context, 15)),
+                  ),
+                ],
+              ),
+            ),
             actions: [
               TextButton(
                 child: const Text('Ok'),
@@ -117,8 +181,25 @@ class _SignUpState extends State<SignUp> {
         showDialog<void>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text('Server Not Responding'),
+            content: Container(
+              height: 220,
+              padding: EdgeInsets.all(2),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Lottie.asset('assets/animations/warning.json',
+                      height: MediaQuery.of(context).size.height * 0.17,
+                      // controller: _controller,
+                      repeat: true,
+                      animate: true),
+                  Text(
+                    'Server not Responding',
+                    style: TextStyle(
+                        fontSize: fs.getadaptiveTextSize(context, 15)),
+                  ),
+                ],
+              ),
+            ),
             actions: [
               TextButton(
                 child: const Text('Ok'),

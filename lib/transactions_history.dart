@@ -4,6 +4,7 @@ import 'package:cash_register/helper/helper.dart';
 import 'package:cash_register/helper/transaction_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
+import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
@@ -58,6 +59,21 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
 
   Future<List<TransactionDetails>> fetchTransaction() async {
     final prefs = await SharedPreferences.getInstance();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(
+          child: Lottie.asset('assets/animations/loader.json',
+              height: MediaQuery.of(context).size.height * 0.17,
+              // controller: _controller,
+              repeat: true,
+              animate: true),
+        );
+      },
+    );
+
     final response = await http.get(
       Uri.parse('$BASE_URL/transaction'),
       headers: <String, String>{
@@ -69,12 +85,15 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
     // response = utf8.decode(response.bodyBytes);
 
     if (response.statusCode == 200) {
+      Navigator.pop(context);
       return TransactionDetails.fromJsonList(
           json.decode(utf8.decode(response.bodyBytes)));
       // return TransactionDetails.fromJsonList(json.decode(response.body));
     } else {
-      //  return const Text('No transaction data');
+      //  return  Text('No transaction data');
+      Navigator.pop(context);
       throw Exception('Request Failed.');
+      // return ;
     }
   }
 
@@ -226,7 +245,8 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
-              child: CircularProgressIndicator(),
+              // child: CircularProgressIndicator(),
+              child: null,
             );
           } else if (snapshot.hasError) {
             return Center(

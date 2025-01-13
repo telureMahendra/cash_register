@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:cash_register/helper/helper.dart';
 import 'package:cash_register/my_home_page.dart';
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'Widgets/button.dart';
 import 'Widgets/text_field.dart';
@@ -31,6 +32,8 @@ class _SignupScreenState extends State<LoginScreen> {
     emailController.dispose();
     passwordController.dispose();
   }
+
+  FontSize fs = FontSize();
 
   Future<void> saveLoginStatus(bool isLoggedIn) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -72,7 +75,13 @@ class _SignupScreenState extends State<LoginScreen> {
           context: context,
           barrierDismissible: false,
           builder: (BuildContext context) {
-            return const Center(child: CircularProgressIndicator());
+            return Center(
+              child: Lottie.asset('assets/animations/loader.json',
+                  height: MediaQuery.of(context).size.height * 0.17,
+                  // controller: _controller,
+                  repeat: true,
+                  animate: true),
+            );
           },
         );
 
@@ -101,7 +110,7 @@ class _SignupScreenState extends State<LoginScreen> {
           await prefs.setString('password', jsonData['password'] ?? '');
 
           saveLoginStatus(true);
-          Navigator.pop(context);
+
           Navigator.pushReplacement(
               context,
               MaterialPageRoute(
@@ -113,12 +122,38 @@ class _SignupScreenState extends State<LoginScreen> {
           // then throw an exception.
           showDialog<void>(
             context: context,
+            barrierDismissible: false,
             builder: (context) => AlertDialog(
-              title: const Text('Error'),
-              content: Text('${response.body.toString()}'),
+              // title: const Text('Error'),
+
+              insetPadding: EdgeInsets.all(0),
+              content: Container(
+                height: 220,
+                padding: EdgeInsets.all(2),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Lottie.asset('assets/animations/warning.json',
+                        height: MediaQuery.of(context).size.height * 0.17,
+                        // controller: _controller,
+                        repeat: true,
+                        animate: true),
+                    Text(
+                      '${response.body.toString()}',
+                      style: TextStyle(
+                          fontSize: fs.getadaptiveTextSize(context, 15)),
+                    ),
+                  ],
+                ),
+              ),
               actions: [
                 TextButton(
-                  child: const Text('Ok'),
+                  style: TextButton.styleFrom(),
+                  child: Text(
+                    'Ok',
+                    style: TextStyle(
+                        fontSize: fs.getadaptiveTextSize(context, 20)),
+                  ),
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
@@ -126,6 +161,7 @@ class _SignupScreenState extends State<LoginScreen> {
               ],
             ),
           );
+          sleep(Duration(seconds: 1));
         }
       } on SocketException {
         // Handle network errors
@@ -133,8 +169,26 @@ class _SignupScreenState extends State<LoginScreen> {
         showDialog<void>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text('Network Error'),
+            // title: const Text('Error'),
+            content: Container(
+              height: 220,
+              padding: EdgeInsets.all(2),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Lottie.asset('assets/animations/warning.json',
+                      height: MediaQuery.of(context).size.height * 0.17,
+                      // controller: _controller,
+                      repeat: true,
+                      animate: true),
+                  Text(
+                    'Network Error',
+                    style: TextStyle(
+                        fontSize: fs.getadaptiveTextSize(context, 15)),
+                  ),
+                ],
+              ),
+            ),
             actions: [
               TextButton(
                 child: const Text('Ok'),
@@ -150,8 +204,25 @@ class _SignupScreenState extends State<LoginScreen> {
         showDialog<void>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text('Server Not Responding'),
+            content: Container(
+              height: 220,
+              padding: EdgeInsets.all(2),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Lottie.asset('assets/animations/warning.json',
+                      height: MediaQuery.of(context).size.height * 0.17,
+                      // controller: _controller,
+                      repeat: true,
+                      animate: true),
+                  Text(
+                    'Server not Responding',
+                    style: TextStyle(
+                        fontSize: fs.getadaptiveTextSize(context, 15)),
+                  ),
+                ],
+              ),
+            ),
             actions: [
               TextButton(
                 child: const Text('Ok'),

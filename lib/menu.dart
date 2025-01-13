@@ -1,8 +1,10 @@
 import 'package:cash_register/login.dart';
-import 'package:cash_register/printTest.dart';
+
 import 'package:cash_register/profile.dart';
+import 'package:cash_register/settings.dart';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/placeholder.dart';
 import 'package:flutter_styled_toast/flutter_styled_toast.dart';
@@ -10,14 +12,14 @@ import 'package:flutter_styled_toast/flutter_styled_toast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:url_launcher/url_launcher.dart';
 
-class SettingWidget extends StatefulWidget {
-  const SettingWidget({super.key});
+class MenuWidget extends StatefulWidget {
+  const MenuWidget({super.key});
 
   @override
-  State<SettingWidget> createState() => _SettingWidgetState();
+  State<MenuWidget> createState() => _MenuWidgetState();
 }
 
-class _SettingWidgetState extends State<SettingWidget> {
+class _MenuWidgetState extends State<MenuWidget> {
   var size, width, height;
 
   Future<void> userLogout(BuildContext context) async {
@@ -46,10 +48,11 @@ class _SettingWidgetState extends State<SettingWidget> {
     return Scaffold(
         appBar: AppBar(
           title: Text(
-            "Settings",
+            "Menu",
             style: TextStyle(color: Colors.white, fontFamily: 'Becham'),
           ),
           backgroundColor: Colors.blue,
+          foregroundColor: Colors.white,
           centerTitle: false,
         ),
         resizeToAvoidBottomInset: false,
@@ -116,9 +119,43 @@ class _SettingWidgetState extends State<SettingWidget> {
                                   ),
                                   onPressed: () async {
                                     // userLogout(context);
+                                    // Navigator.push(context, MaterialPageRoute(
+                                    //   builder: (context) {
+                                    //     return ProfileScreen();
+                                    //   },
+                                    // ));
+                                  },
+                                )
+                              ],
+                            ))),
+                    onTap: () {
+                      // printReciept();
+                      showToast("Under Construction!", context: context);
+                    }),
+              ),
+              Card(
+                elevation: 5,
+                child: InkWell(
+                    child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Container(
+                            height: height * 0.05,
+                            width: width * 0.90,
+                            child: Row(
+                              children: [
+                                TextButton(
+                                  child: Row(
+                                    children: [
+                                      Icon(Icons.settings_outlined,
+                                          color: Colors.black),
+                                      Text("Settings",
+                                          style: TextStyle(color: Colors.black))
+                                    ],
+                                  ),
+                                  onPressed: () {
                                     Navigator.push(context, MaterialPageRoute(
                                       builder: (context) {
-                                        return ProfileScreen();
+                                        return SettingsWidget();
                                       },
                                     ));
                                   },
@@ -128,10 +165,9 @@ class _SettingWidgetState extends State<SettingWidget> {
                     onTap: () {
                       Navigator.push(context, MaterialPageRoute(
                         builder: (context) {
-                          return PrintTestScreen();
+                          return SettingsWidget();
                         },
                       ));
-                      showToast("Under Construction!", context: context);
                     }),
               ),
               Card(
@@ -379,7 +415,8 @@ class _SettingWidgetState extends State<SettingWidget> {
                               ],
                             ))),
                     onTap: () {
-                      showToast("Under Construction!", context: context);
+                      // showToast("Under Construction!", context: context);
+                      userLogout(context);
                     }),
               ),
               Padding(padding: EdgeInsets.only(bottom: 20))
