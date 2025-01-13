@@ -15,7 +15,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   var username = '';
 
   var userId, email, mobile;
-  var businessName, address, businessEmail, businessMobile;
+  var businessName, address, businessEmail, businessMobile, gstNumber, upiID;
 
   @override
   initState() {
@@ -36,6 +36,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     address = prefs.getString("address");
     businessEmail = prefs.getString("businessEmail");
     businessMobile = prefs.getString("businessMobile");
+    gstNumber = prefs.getString("gstNumber") ?? '';
+    upiID = prefs.getString("upiID") ?? '';
 
     setState(() {});
   }
@@ -76,31 +78,60 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Container(
-                                // child: Image.asset(
-                                //     'assets/images/vizpay_logo.jpeg'),
-                                height: width * 0.22,
-                                width: width * 0.22,
+                              Stack(
+                                children: [
+                                  Container(
+                                    // child: Image.asset(
+                                    //     'assets/images/vizpay_logo.jpeg'),
+                                    height: width * 0.22,
+                                    width: width * 0.22,
 
-                                child: Center(
-                                  child: Text(
-                                    username != null && username.isNotEmpty
-                                        ? username[0]
-                                        : '0',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize:
-                                            getadaptiveTextSize(context, 50)),
+                                    child: Center(
+                                      child: Text(
+                                        username != null && username.isNotEmpty
+                                            ? username[0]
+                                            : '0',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize:
+                                              getadaptiveTextSize(context, 50),
+                                        ),
+                                      ),
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(50),
+                                      color: Colors.amber,
+                                      border: Border.all(
+                                        color: Color.fromARGB(255, 0, 0, 0),
+                                        width: 1,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(50),
-                                  color: Colors.amber,
-                                  border: Border.all(
-                                    color: Color.fromARGB(255, 0, 0, 0),
-                                    width: 1,
-                                  ),
-                                ),
+                                  Container(
+                                    height: width * 0.22,
+                                    width: width * 0.22,
+                                    // padding: EdgeInsets.only(top: 20),
+
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        TextButton(
+                                          onPressed: () {},
+                                          child: Icon(
+                                            Icons.add_a_photo_rounded,
+                                            color: Colors.blueAccent,
+                                            size: 40,
+                                          ),
+                                        )
+                                        // Icon(
+                                        //   Icons.mode_edit,
+                                        //   color: Colors.blueAccent,
+                                        //   size: 40,
+                                        // ),
+                                      ],
+                                    ),
+                                  )
+                                ],
                               ),
                               Container(
                                 // padding: EdgeInsets.only(left: height * 0.015),
@@ -342,6 +373,73 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 onTap: () {},
                               ),
+                              ListTile(
+                                title: Container(
+                                  padding: EdgeInsets.all(15),
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                          alignment: Alignment.topLeft,
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.account_balance),
+                                              Text(
+                                                "UPI ID",
+                                                style: TextStyle(
+                                                    fontSize:
+                                                        getadaptiveTextSize(
+                                                            context, 15),
+                                                    fontWeight:
+                                                        FontWeight.bold),
+                                              ),
+                                            ],
+                                          )),
+                                      Container(
+                                        padding:
+                                            EdgeInsets.only(left: width * 0.08),
+                                        alignment: Alignment.topLeft,
+                                        child: Text('${upiID}'),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                                onTap: () {},
+                              ),
+                              if (gstNumber != null ||
+                                  gstNumber.toString().isNotEmpty ||
+                                  gstNumber.toString() != '')
+                                ListTile(
+                                  title: Container(
+                                    padding: EdgeInsets.all(15),
+                                    child: Column(
+                                      children: [
+                                        Container(
+                                            alignment: Alignment.topLeft,
+                                            child: Row(
+                                              children: [
+                                                Icon(Icons.percent),
+                                                Text(
+                                                  "GST Number",
+                                                  style: TextStyle(
+                                                      fontSize:
+                                                          getadaptiveTextSize(
+                                                              context, 15),
+                                                      fontWeight:
+                                                          FontWeight.bold),
+                                                ),
+                                              ],
+                                            )),
+                                        Container(
+                                          padding: EdgeInsets.only(
+                                              left: width * 0.08),
+                                          alignment: Alignment.topLeft,
+                                          child: Text('${gstNumber}'),
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                  onTap: () {},
+                                ),
                               ListTile(
                                 title: Container(
                                   padding: EdgeInsets.all(15),
