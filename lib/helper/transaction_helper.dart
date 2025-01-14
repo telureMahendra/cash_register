@@ -4,13 +4,15 @@ class TransactionDetails {
   final String date;
   final String amount;
   final String transactionId;
+  final String dateTime;
 
   TransactionDetails(
       {required this.method,
       required this.time,
       required this.date,
       required this.amount,
-      required this.transactionId});
+      required this.transactionId,
+      required this.dateTime});
 
   factory TransactionDetails.fromJson(Map<String, dynamic> json) {
     return TransactionDetails(
@@ -18,7 +20,8 @@ class TransactionDetails {
         time: json['time'],
         date: json['date'],
         amount: json['amount'],
-        transactionId: json['transactionId']);
+        transactionId: json['transactionId'],
+        dateTime: json['dateTime']);
   }
 
   static List<TransactionDetails> fromJsonList(dynamic jsonList) {

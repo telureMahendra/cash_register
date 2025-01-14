@@ -37,21 +37,24 @@ class DatabaseService {
   Future<void> create(Database database, int version) async =>
       await BillDB().createTable(database);
 
-  Future<void> saveTransaction() async {
+  Future<void> saveTransaction(String amount, String method, String time,
+      String date, String userId, String dateTime) async {
     final db = await database;
     await db!.insert('bills', {
-      "amount": "152",
-      "method": "cash",
-      "time": "10:12:34 AM",
-      "date": "Jan 7, 2025",
-      "userId": "12345"
+      "amount": amount,
+      "method": method,
+      "time": time,
+      "date": date,
+      "userId": userId,
+      "datetime": dateTime
     });
   }
 
-  Future<List> getDBdata() async {
+  Future<List<Map<String, Object?>>> getDBdata() async {
     final db = await database;
 
-    List<Map> list = await db!.rawQuery('SELECT * FROM bills');
+    List<Map<String, Object?>> list = await db!.rawQuery('SELECT * FROM bills');
+    // print(list);
 
     return list;
   }

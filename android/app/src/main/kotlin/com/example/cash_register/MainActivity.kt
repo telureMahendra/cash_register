@@ -30,12 +30,14 @@ class MainActivity: FlutterActivity() {
             var amount = args["amount"].toString();
             var gstNumber = args["gstNumber"].toString();
             var isPrintGST = args["isPrintGST"].toString();
+            var image = args["image"].toString();
 
 
             if(call.method == "printCartReceipt"){
                 val printReciept = PrintReciept();
                 if (shopName != null && address != null && shopEmail != null && shopMobile != null) {
-                     printReciept.printCartReceipt(shopName,address, shopEmail, shopMobile, amount, gstNumber, isPrintGST);
+//                    printReciept.printImage(image)
+                     printReciept.printCartReceipt(shopName,address, shopEmail, shopMobile, amount, gstNumber, isPrintGST, image);
                 }else{
                     Toast.makeText(MainApplication.currentApplicationContext, "Details missing", Toast.LENGTH_SHORT).show()
                 };

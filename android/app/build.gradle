@@ -55,4 +55,5 @@ flutter {
 dependencies {
     implementation files('libs/bw_pos_sdk_20240626.jar')
     implementation files('libs/classes.jar')
+    implementation 'androidx.core:core-ktx:1.12.0'
 }

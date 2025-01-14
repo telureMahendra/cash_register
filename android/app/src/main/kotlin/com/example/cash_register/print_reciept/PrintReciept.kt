@@ -1,6 +1,6 @@
 package com.example.cash_register.print_reciept
 
-import android.R.string
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Message
 import android.widget.Toast
@@ -8,13 +8,20 @@ import androidx.annotation.RequiresApi
 import com.basewin.aidl.OnPrinterListener
 import com.basewin.define.GlobalDef
 import com.basewin.models.TextPrintLine
+import com.basewin.packet8583.model.BitMap
 import com.basewin.services.PrinterBinder
 import com.basewin.services.ServiceManager
-import com.example.cash_register.MainActivity
 import com.example.cash_register.MainApplication
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+//import java.util.Base64
+import android.util.Base64
+
+import android.graphics.Bitmap
+import com.basewin.models.BitmapPrintLine
+import com.basewin.models.PrintLine
+
 
 class PrintReciept() {
 
@@ -26,10 +33,71 @@ class PrintReciept() {
         return tempStr
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun printCartReceipt( shopName:String, address: String, shopEmail:String, shopMobile:String , amount:String, gstNumber:String, isPrintGST: String) {
+    fun decodeBase64ToBitmap(encodedImage: String): Bitmap? {
+        val decodedBytes = Base64.decode(encodedImage, Base64.DEFAULT)
+        return BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
+    }
 
-//        Toast.makeText(MainApplication.currentApplicationContext, shopName + " " + address + " " + shopEmail + " " + shopMobile, Toast.LENGTH_SHORT).show()
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun printImage(encodedImage: String){
+        ServiceManager.getInstence().init(MainApplication.currentApplicationContext)
+        val printer: PrinterBinder = ServiceManager.getInstence().printer
+        printer.cleanCache()
+        printer.printTypesettingType = GlobalDef.PRINTERLAYOUT_TYPESETTING
+        printer.setPrintGray(Integer.valueOf(1000))
+        printer.setPrintFontByAsserts("RobotoMono.ttf")
+        printer.setLineSpace(0)
+        val textPrintLine = TextPrintLine()
+
+
+        val options = BitmapFactory.Options()
+        options.inScaled = false
+        var bitmap: Bitmap? = null
+
+        try {
+            bitmap= decodeBase64ToBitmap(encodedImage)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        if (bitmap != null) {
+            val bitmapPrintLine = BitmapPrintLine()
+            bitmapPrintLine.type = PrintLine.BITMAP
+            bitmapPrintLine.position = PrintLine.CENTER
+            bitmapPrintLine.bitmap = bitmap
+
+            try {
+                printer?.addPrintLine(bitmapPrintLine)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+//        textPrintLine.content = "\n\n"
+//        printer.addPrintLine(textPrintLine)
+
+        // start print here
+        printer.beginPrint(object : OnPrinterListener {
+            override fun onError(p0: Int, error: String?) {
+                Toast.makeText(MainApplication.currentApplicationContext, "Error", Toast.LENGTH_SHORT).show()
+                val msg = Message()
+                msg.data.putString("msg", "print error,errno:$p0")
+
+                printer.cleanCache()
+            }
+
+            override fun onFinish() {
+//            TODO("Not yet implemented")
+            }
+
+            override fun onStart() {
+//            TODO("Not yet implemented")
+            }
+        }
+        )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun printCartReceipt( shopName:String, address: String, shopEmail:String, shopMobile:String , amount:String, gstNumber:String, isPrintGST: String, encodedImage: String) {
 
         ServiceManager.getInstence().init(MainApplication.currentApplicationContext)
         val printer: PrinterBinder = ServiceManager.getInstence().printer
@@ -46,13 +114,38 @@ class PrintReciept() {
         printer.printTypesettingType = GlobalDef.PRINTERLAYOUT_TYPESETTING
         printer.setPrintGray(Integer.valueOf(1000))
         printer.setPrintFontByAsserts("RobotoMono.ttf")
+
+
+
+        val options = BitmapFactory.Options()
+        options.inScaled = false
+        var bitmap: Bitmap? = null
+
+        try {
+            bitmap= decodeBase64ToBitmap(encodedImage)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        if (bitmap != null) {
+            val bitmapPrintLine = BitmapPrintLine()
+            bitmapPrintLine.type = PrintLine.BITMAP
+            bitmapPrintLine.position = PrintLine.CENTER
+            bitmapPrintLine.bitmap = bitmap
+
+            try {
+                printer?.addPrintLine(bitmapPrintLine)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
         printer.setLineSpace(0)
         val textPrintLine = TextPrintLine()
         textPrintLine.content = shopName
         textPrintLine.isBold = true
         textPrintLine.size = TextPrintLine.FONT_LARGE
         textPrintLine.position = TextPrintLine.CENTER
-        printer.setLineSpace(15)
+//        printer.setLineSpace(15)
         printer.addPrintLine(textPrintLine)
 
 
@@ -162,48 +255,9 @@ class PrintReciept() {
 
         printer.setLineSpace(10)
         textPrintLine.size = TextPrintLine.FONT_SMALL
-        textPrintLine.content = "Powerd by : Vizpay Business Solutions Pvt. Ltd."
+        textPrintLine.content = "Powerd by: Vizpay Business Solutions Pvt. Ltd."
         textPrintLine.position = TextPrintLine.CENTER
         printer.addPrintLine(textPrintLine)
-
-
-
-
-
-
-
-//        val options = BitmapFactory.Options()
-//        options.inScaled = false
-//        var bitmap: BitMap? = null
-
-//        try {
-//            textPrintLine.content = " "
-//            printer?.addPrintLine(textPrintLine)
-//
-//            bitmap =
-//                BitmapFactory.decodeResource(
-//                    R.attr.resourcesMap,
-//                    R.drawable.viz_print_logo_download,
-//                    options
-//                )
-//        } catch (e: Exception) {
-//            e.printStackTrace()
-//        }
-
-//        if (bitmap != null) {
-//            val bitmapPrintLine = BitmapPrintLine()
-//            bitmapPrintLine.type = PrintLine.BITMAP
-//            bitmapPrintLine.position = PrintLine.CENTER
-//
-//            bitmapPrintLine.bitmap = VizPicUtils.switchColor(bitmap)
-//            try {
-//                printer?.addPrintLine(bitmapPrintLine)
-//            } catch (e: Exception) {
-//                e.printStackTrace()
-//            }
-//        }
-
-
 
 
 

@@ -48,7 +48,16 @@ class _MyHomePageState extends State<MyHomePage> {
   late bool isLoggedIn = false;
   late bool isBusinessDetailsFound = false;
 
-  var upiID;
+  var upiID = '';
+
+  List<Map<String, Object?>>? _billData;
+
+  Future<void> _fetchData() async {
+    List<Map<String, Object?>>? data = await dbs.getDBdata();
+    setState(() {
+      _billData = data;
+    });
+  }
 
   // final upiDetails = UPIDetails(
   //     upiID: "95610051485@ybl", payeeName: "MahendraTelure", amount: 10);
@@ -64,6 +73,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   printReciept() async {
     final prefs = await SharedPreferences.getInstance();
+    bool status;
+    status = prefs.getBool('isLogoPrint') ?? false;
     channel.invokeListMethod("printCartReceipt", {
       "shopName": prefs.getString("businessName") ?? '',
       "address": prefs.getString("address") ?? '',
@@ -71,7 +82,8 @@ class _MyHomePageState extends State<MyHomePage> {
       "shopEmail": prefs.getString('businessEmail') ?? '',
       "amount": '${inrFormat.format(double.parse(total))}',
       "gstNumber": prefs.getString('gstNumber') ?? '',
-      "isPrintGST": prefs.getBool('isPrintGST') ?? ''
+      "isPrintGST": prefs.getBool('isPrintGST') ?? '',
+      "image": status ? prefs.getString('image') ?? '' : ''
     });
   }
 
@@ -172,6 +184,7 @@ class _MyHomePageState extends State<MyHomePage> {
     dbs.getDBdata();
     // checkLoggedIn();
     checkBusinessDetailsFound();
+    _fetchData();
     setState(() {});
   }
 
@@ -242,9 +255,12 @@ class _MyHomePageState extends State<MyHomePage> {
         // saveTransaction(method);
         // sqDemo();
         if (method == 'CASH') {
+          // _fetchData();
+          // print("Home page ${_billData?[0]}");
+          // saveTransactionSqlite("");
           saveTransactionToServer(method);
         } else {
-          upiID = prefs.getString("upiID")!;
+          upiID = prefs.getString("upiID") ?? '';
           if (upiID.toString().isNotEmpty ||
               upiID.trim().isNotEmpty ||
               upiID.toString() != '') {
@@ -670,7 +686,6 @@ class _MyHomePageState extends State<MyHomePage> {
                                       ),
                                     ),
                                     onPressed: () {
-                                      Navigator.of(context).pop();
                                       Navigator.pop(context);
                                     },
                                     child: Text(
@@ -698,15 +713,53 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   // sqDemo() {
-  //   print(dbs.getDBdata());
+  // print(dbs.getDBdata());
   // }
+
+  saveTransactionSqlite(String method) async {
+    String time = DateFormat('jms').format(DateTime.now()).toString();
+    String date = DateFormat('yMMMd').format(DateTime.now()).toString();
+    String amount = inrFormat.format(double.parse(total)).toString();
+    String dateTime =
+        DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()).toString();
+    final prefs = await SharedPreferences.getInstance();
+
+    String userId = prefs.getString("userId") ?? '';
+
+    dbs.saveTransaction(amount, method, time, date, userId, dateTime);
+
+    // try {
+    //   showDialog(
+    //     context: context,
+    //     barrierDismissible: false,
+    //     builder: (BuildContext context) {
+    //       return Center(
+    //         child: Lottie.asset('assets/animations/loader.json',
+    //             height: MediaQuery.of(context).size.height * 0.17,
+    //             // controller: _controller,
+    //             repeat: true,
+    //             animate: true),
+    //       );
+    //     },
+    //   );
+    // } catch (e) {}
+  }
 
 // Future<http.Response>
   void saveTransactionToServer(String method) async {
     String time = DateFormat('jms').format(DateTime.now()).toString();
     String date = DateFormat('yMMMd').format(DateTime.now()).toString();
     String amount = inrFormat.format(double.parse(total)).toString();
+    String dateTime =
+        DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()).toString();
     final prefs = await SharedPreferences.getInstance();
+
+    // 'method': method,
+    // 'time': time,
+    // 'date': date,
+    // 'amount': amount,
+    // 'user': {
+    // 'userId': '${prefs.getInt('userId')}',
 
     try {
       showDialog(
@@ -736,6 +789,7 @@ class _MyHomePageState extends State<MyHomePage> {
           'user': {
             'userId': '${prefs.getInt('userId')}',
           },
+          "dateTime": dateTime
         }),
       );
 

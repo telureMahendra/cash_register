@@ -1,6 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:cash_register/editBusinessDetails.dart';
 import 'package:cash_register/editProfile.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -15,7 +19,102 @@ class _ProfileScreenState extends State<ProfileScreen> {
   var username = '';
 
   var userId, email, mobile;
-  var businessName, address, businessEmail, businessMobile, gstNumber, upiID;
+  var businessName,
+      address,
+      businessEmail,
+      businessMobile,
+      gstNumber,
+      upiID,
+      image;
+
+  File? galleryFile;
+  final picker = ImagePicker();
+
+  void _showPicker({
+    required BuildContext context,
+  }) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Wrap(
+            children: <Widget>[
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text('Photo Library'),
+                onTap: () {
+                  getImage(ImageSource.gallery);
+                  Navigator.of(context).pop();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text('Camera'),
+                onTap: () {
+                  getImage(ImageSource.camera);
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future getImage(
+    ImageSource img,
+  ) async {
+    final pickedFile = await picker.pickImage(source: img);
+    XFile? xfilePick = pickedFile;
+    setState(
+      () {
+        if (xfilePick != null) {
+          galleryFile = File(pickedFile!.path);
+          storeImage();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Nothing is selected')));
+        }
+      },
+    );
+  }
+
+  String convertIntoBase64(File file) {
+    List<int> imageBytes = file.readAsBytesSync();
+    String base64File = base64Encode(imageBytes);
+    return base64File;
+  }
+
+  storeImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString("image", convertIntoBase64(galleryFile!));
+    loadImage();
+  }
+
+  loadImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    image = prefs.getString("image").toString();
+    setState(() {});
+  }
+
+  // Future<File> saveFilePermanently(String imagePath) async {
+  // SharedPreferences prefs = await SharedPreferences.getInstance();
+  // final directory = await getApplicationDocumentsDirectory();
+  // final name = basename(imagePath);
+  // final image = File("${directory.path}/$name");
+  // setState(() {
+  //   prefs.setString("profilImage", image.path);
+  // });
+  //   return File(imagePath).copy(image.path);
+  // }
+
+  // loadImage() async {
+  //   SharedPreferences prefs = await SharedPreferences.getInstance();
+  //   setState(() {
+  //     myImagePath = prefs.getString("profilImage");
+  //   });
+  // }
 
   @override
   initState() {
@@ -23,6 +122,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {});
     getData();
+    loadImage();
     setState(() {});
   }
 
@@ -106,30 +206,78 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       ),
                                     ),
                                   ),
-                                  Container(
-                                    height: width * 0.22,
-                                    width: width * 0.22,
-                                    // padding: EdgeInsets.only(top: 20),
+                                  // Container(
+                                  //   // child: Image.asset(
+                                  //   //     'assets/images/vizpay_logo.jpeg'),
+                                  //   height: width * 0.22,
+                                  //   width: width * 0.22,
 
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.end,
-                                      children: [
-                                        TextButton(
-                                          onPressed: () {},
-                                          child: Icon(
-                                            Icons.add_a_photo_rounded,
-                                            color: Colors.blueAccent,
-                                            size: 40,
-                                          ),
-                                        )
-                                        // Icon(
-                                        //   Icons.mode_edit,
-                                        //   color: Colors.blueAccent,
-                                        //   size: 40,
-                                        // ),
-                                      ],
-                                    ),
-                                  )
+                                  //   // ignore: sort_child_properties_last
+                                  //   child: image == null
+                                  //       ? const Center(
+                                  //           child: Text(
+                                  //               'Issue while Loading image!!'))
+                                  //       :
+                                  //       // Center(child: Image.file(galleryFile!)),
+                                  //       CircleAvatar(
+                                  //           radius: 50,
+                                  //           backgroundColor: Colors.amber,
+                                  //           child: Padding(
+                                  //             padding: const EdgeInsets.all(
+                                  //                 0), // Border radius
+                                  //             child: ClipOval(
+                                  //               child: Image.memory(
+                                  //                 Base64Decoder()
+                                  //                     .convert(image),
+                                  //                 fit: BoxFit.fitWidth,
+                                  //                 width: width * 0.22,
+                                  //                 height: width * 0.22,
+                                  //               ),
+                                  //             ),
+                                  //           ),
+                                  //         ),
+                                  //   // Center(child: Image.file(galleryFile!)),
+                                  //   // Center(
+                                  //   // child: Image.memory(
+                                  //   //   Base64Decoder().convert(image),
+                                  //   //   fit: BoxFit.fill,
+                                  //   // ),
+                                  //   //   ),
+                                  //   decoration: BoxDecoration(
+                                  //     borderRadius: BorderRadius.circular(50),
+                                  //     color: Colors.amber,
+                                  //     border: Border.all(
+                                  //       color: Color.fromARGB(255, 0, 0, 0),
+                                  //       width: 1,
+                                  //     ),
+                                  //   ),
+                                  // ),
+                                  // Container(
+                                  //   height: width * 0.22,
+                                  //   width: width * 0.22,
+                                  //   // padding: EdgeInsets.only(top: 20),
+
+                                  //   child: Column(
+                                  //     mainAxisAlignment: MainAxisAlignment.end,
+                                  //     children: [
+                                  //       TextButton(
+                                  //         onPressed: () {
+                                  //           _showPicker(context: context);
+                                  //         },
+                                  //         child: Icon(
+                                  //           Icons.add_a_photo_rounded,
+                                  //           color: Colors.black,
+                                  //           size: 40,
+                                  //         ),
+                                  //       )
+                                  //       // Icon(
+                                  //       //   Icons.mode_edit,
+                                  //       //   color: Colors.blueAccent,
+                                  //       //   size: 40,
+                                  //       // ),
+                                  //     ],
+                                  //   ),
+                                  // )
                                 ],
                               ),
                               Container(

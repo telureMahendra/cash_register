@@ -81,6 +81,7 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
         'userId': '${prefs.getInt('userId')}',
       },
     );
+    print(response.body.toString());
 
     // response = utf8.decode(response.bodyBytes);
 
@@ -92,9 +93,54 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
     } else {
       //  return  Text('No transaction data');
       Navigator.pop(context);
+      // return Text("data");
+      alertMessage(response.body.toString());
       throw Exception('Request Failed.');
       // return ;
     }
+  }
+
+  alertMessage(msg) {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        // title: const Text('Error'),
+
+        insetPadding: EdgeInsets.all(0),
+        content: Container(
+          height: 220,
+          padding: EdgeInsets.all(2),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Lottie.asset('assets/animations/warning.json',
+                  height: MediaQuery.of(context).size.height * 0.17,
+                  // controller: _controller,
+                  repeat: true,
+                  animate: true),
+              Text(
+                '${msg}',
+                style: TextStyle(fontSize: getadaptiveTextSize(context, 15)),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            style: TextButton.styleFrom(),
+            child: Text(
+              'Ok',
+              style: TextStyle(fontSize: getadaptiveTextSize(context, 20)),
+            ),
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pop();
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   // get transactions stored spreferencess
@@ -360,7 +406,7 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
                 ));
               },
             );
-          } else if (snapshot.hasData == false) {
+          } else if (!snapshot.hasData) {
             return Center(
               child: Text("No Transactions"),
             );
