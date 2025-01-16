@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:cash_register/db/bill_db.dart';
+import 'package:cash_register/helper/transaction_helper.dart';
 import 'package:cash_register/model/bill.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -34,28 +35,72 @@ class DatabaseService {
     return database;
   }
 
+  Future<List<TransactionDetailsSQL>> getUnsyncedTransactions() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps =
+        await db!.query('bills', where: 'status = 0');
+    return List.generate(maps.length, (i) {
+      return TransactionDetailsSQL.fromMap(maps[i]);
+    });
+  }
+
+  Future<void> updateTransactionSyncStatus(int id, bool isSynced) async {
+    final db = await database;
+    await db!.update('bills', {'status': isSynced ? 1 : 0},
+        where: 'tid = ?', whereArgs: [id]);
+  }
+
   Future<void> create(Database database, int version) async =>
       await BillDB().createTable(database);
 
   Future<void> saveTransaction(String amount, String method, String time,
-      String date, String userId, String dateTime) async {
+      String date, int userId, String dateTime, int flag) async {
     final db = await database;
+
+    final path = await getDatabasesPath();
+    print('path for db is: $path');
+    // db?.execute(
     await db!.insert('bills', {
       "amount": amount,
       "method": method,
       "time": time,
       "date": date,
       "userId": userId,
-      "datetime": dateTime
+      "tdatetime": dateTime,
+      "status": flag
     });
+    print("data stored dbservice");
+  }
+
+  deleteData() async {
+    final db = await database;
+    db!.execute("DELETE FROM bills;");
+    print("data is deleted");
+  }
+
+  createTable() async {
+    final db = await database;
+    db!.execute("""CREATE TABLE IF NOT EXISTS bills(
+    "tid" INTEGER NOT NULL,
+    "amount" TEXT NOT NULL,
+    "method" TEXT,
+    "time" TEXT,
+    "date" TEXT,
+    "userId" INTEGER
+    "created_at" DATETIME DEFAULT CURRENT_TIMESTAMP,
+    "tdatetime" TEXT,
+    "status" INTEGER,
+    PRIMARY KEY("TID" AUTOINCREMENT)
+    ); """);
+    print("data is deleted");
   }
 
   Future<List<Map<String, Object?>>> getDBdata() async {
     final db = await database;
+    await _initDB();
 
-    List<Map<String, Object?>> list = await db!.rawQuery('SELECT * FROM bills');
-    // print(list);
-
+    List<Map<String, Object?>> list =
+        await db!.rawQuery('SELECT * FROM bills ORDER BY date(tdatetime) ASC ');
     return list;
   }
 }

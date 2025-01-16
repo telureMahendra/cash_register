@@ -9,6 +9,7 @@ import 'package:cash_register/helper/helper.dart';
 import 'package:cash_register/menu.dart';
 import 'package:cash_register/success.dart';
 import 'package:cash_register/transactions_history.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -85,6 +86,11 @@ class _MyHomePageState extends State<MyHomePage> {
       "isPrintGST": prefs.getBool('isPrintGST') ?? '',
       "image": status ? prefs.getString('image') ?? '' : ''
     });
+  }
+
+  Future<bool> isNetworkAvailable() async {
+    var connectivityResult = await (Connectivity().checkConnectivity());
+    return connectivityResult != ConnectivityResult.none;
   }
 
   final inrFormat = NumberFormat.currency(
@@ -181,10 +187,8 @@ class _MyHomePageState extends State<MyHomePage> {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       _focusNode.requestFocus();
     });
-    dbs.getDBdata();
-    // checkLoggedIn();
+    checkLoggedIn();
     checkBusinessDetailsFound();
-    _fetchData();
     setState(() {});
   }
 
@@ -252,13 +256,14 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         );
       } else {
-        // saveTransaction(method);
-        // sqDemo();
         if (method == 'CASH') {
+          saveTransactionSqlite(method);
+          // dbs.deleteData();
+
           // _fetchData();
-          // print("Home page ${_billData?[0]}");
-          // saveTransactionSqlite("");
-          saveTransactionToServer(method);
+          // print("Home page $_billData");
+
+          // saveTransactionToServer(method);
         } else {
           upiID = prefs.getString("upiID") ?? '';
           if (upiID.toString().isNotEmpty ||
@@ -724,9 +729,11 @@ class _MyHomePageState extends State<MyHomePage> {
         DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()).toString();
     final prefs = await SharedPreferences.getInstance();
 
-    String userId = prefs.getString("userId") ?? '';
+    int userId = prefs.getInt("userId")!;
 
-    dbs.saveTransaction(amount, method, time, date, userId, dateTime);
+    dbs.saveTransaction(amount, method, time, date, userId, dateTime, 0);
+    print("Date stored");
+    successful();
 
     // try {
     //   showDialog(
@@ -780,16 +787,18 @@ class _MyHomePageState extends State<MyHomePage> {
         Uri.parse(BASE_URL + '/transaction'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
+          'userId': '${prefs.getInt('userId')}'
         },
         body: jsonEncode(<String, dynamic>{
           'method': method,
           'time': time,
           'date': date,
           'amount': amount,
+          'userId': '${prefs.getInt('userId')}',
+          "dateTime": dateTime,
           'user': {
             'userId': '${prefs.getInt('userId')}',
-          },
-          "dateTime": dateTime
+          }
         }),
       );
 
@@ -1220,7 +1229,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     )),
                 Container(
                   padding: EdgeInsets.only(bottom: 0),
-                  width: width * 0.48,
+                  width: width * 0.50,
                   height: height * 0.05,
                   child: OutlinedButton(
                     style: TextButton.styleFrom(),
@@ -1369,8 +1378,8 @@ class _MyHomePageState extends State<MyHomePage> {
     appBarHeight = AppBar().preferredSize.height;
     var heightAll = MediaQuery.of(context).padding.top;
 
-    btnHeight = ((height - 337) / 4) - 28;
-    btnWidth = ((width - (width / 4)) / 3) - 6;
+    btnHeight = ((height - 337) / 4) - height * 0.030;
+    btnWidth = ((width - (width / 4)) / 3) - (width * 0.030);
 
     return WillPopScope(
       onWillPop: _onWillPop,
@@ -1700,375 +1709,375 @@ class _MyHomePageState extends State<MyHomePage> {
               // buttons
               Center(
                 child: Container(
-                  height: height * 0.62,
-                  padding: EdgeInsets.only(top: height * 0.015),
+                  height: height * 0.59,
+                  width: width * 0.95,
+                  padding: EdgeInsets.only(
+                    top: height * 0.008,
+                  ),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Container(
-                        width: width - (width / 4),
-                        child: Container(
-                          width: width,
-                          // height: height - 337,
-
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // 1-3
-                              Container(
-                                width: width - (width / 4),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    // button 1
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "1",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-
-                                          // backgroundColor: Colors.amber,
-                                          foregroundColor: Colors.black,
-
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          addition('1');
-                                        },
+                        width: width - (width / 4) - width * 0.050,
+                        // width: (width / 4) - width * 0.050,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 1-3
+                            Container(
+                              width: (width - (width / 4)),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                children: [
+                                  // button 1
+                                  Container(
+                                    height: btnHeight,
+                                    width: btnWidth,
+                                    child: ElevatedButton(
+                                      child: Text(
+                                        "1",
+                                        style: TextStyle(
+                                            fontSize: getadaptiveTextSize(
+                                                context, 40)),
                                       ),
-                                    ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Color.fromARGB(
+                                            255, 236, 233, 232), // background
 
-                                    // button 2
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "2",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-                                          foregroundColor: Colors.black,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ), // foreground
-                                        ),
-                                        onPressed: () {
-                                          addition('2');
-                                        },
-                                      ),
-                                    ),
+                                        // backgroundColor: Colors.amber,
+                                        foregroundColor: Colors.black,
 
-                                    // button 3
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "3",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              12), // <-- Radius
                                         ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-                                          foregroundColor:
-                                              Colors.black, // foreground
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          addition('3');
-                                        },
                                       ),
+                                      onPressed: () {
+                                        addition('1');
+                                      },
                                     ),
-                                  ],
-                                ),
+                                  ),
+
+                                  // button 2
+                                  Container(
+                                    height: btnHeight,
+                                    width: btnWidth,
+                                    child: ElevatedButton(
+                                      child: Text(
+                                        "2",
+                                        style: TextStyle(
+                                            fontSize: getadaptiveTextSize(
+                                                context, 40)),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Color.fromARGB(
+                                            255, 236, 233, 232), // background
+                                        foregroundColor: Colors.black,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              12), // <-- Radius
+                                        ), // foreground
+                                      ),
+                                      onPressed: () {
+                                        addition('2');
+                                      },
+                                    ),
+                                  ),
+
+                                  // button 3
+                                  Container(
+                                    height: btnHeight,
+                                    width: btnWidth,
+                                    child: ElevatedButton(
+                                      child: Text(
+                                        "3",
+                                        style: TextStyle(
+                                            fontSize: getadaptiveTextSize(
+                                                context, 40)),
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Color.fromARGB(
+                                            255, 236, 233, 232), // background
+                                        foregroundColor:
+                                            Colors.black, // foreground
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              12), // <-- Radius
+                                        ),
+                                      ),
+                                      onPressed: () {
+                                        addition('3');
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ),
+                            ),
 
-                              // 4-6
-                              Container(
-                                width: width - (width / 4),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    // button 4
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "4",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-                                          foregroundColor:
-                                              Colors.black, // foreground
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          addition('4');
-                                        },
+                            // 4-6
+                            Container(
+                              width: width - (width / 4),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                children: [
+                                  // button 4
+                                  Container(
+                                    height: btnHeight,
+                                    width: btnWidth,
+                                    child: ElevatedButton(
+                                      child: Text(
+                                        "4",
+                                        style: TextStyle(
+                                            fontSize: getadaptiveTextSize(
+                                                context, 40)),
                                       ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Color.fromARGB(
+                                            255, 236, 233, 232), // background
+                                        foregroundColor:
+                                            Colors.black, // foreground
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              12), // <-- Radius
+                                        ),
+                                      ),
+                                      onPressed: () {
+                                        addition('4');
+                                      },
                                     ),
+                                  ),
 
-                                    // button 5
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "5",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-                                          foregroundColor:
-                                              Colors.black, // foreground
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          addition('5');
-                                        },
+                                  // button 5
+                                  Container(
+                                    height: btnHeight,
+                                    width: btnWidth,
+                                    child: ElevatedButton(
+                                      child: Text(
+                                        "5",
+                                        style: TextStyle(
+                                            fontSize: getadaptiveTextSize(
+                                                context, 40)),
                                       ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Color.fromARGB(
+                                            255, 236, 233, 232), // background
+                                        foregroundColor:
+                                            Colors.black, // foreground
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              12), // <-- Radius
+                                        ),
+                                      ),
+                                      onPressed: () {
+                                        addition('5');
+                                      },
                                     ),
+                                  ),
 
-                                    // button 6
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "6",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-                                          foregroundColor:
-                                              Colors.black, // foreground
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          addition('6');
-                                        },
+                                  // button 6
+                                  Container(
+                                    height: btnHeight,
+                                    width: btnWidth,
+                                    child: ElevatedButton(
+                                      child: Text(
+                                        "6",
+                                        style: TextStyle(
+                                            fontSize: getadaptiveTextSize(
+                                                context, 40)),
                                       ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Color.fromARGB(
+                                            255, 236, 233, 232), // background
+                                        foregroundColor:
+                                            Colors.black, // foreground
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              12), // <-- Radius
+                                        ),
+                                      ),
+                                      onPressed: () {
+                                        addition('6');
+                                      },
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
+                            ),
 
-                              // 7-9
-                              Container(
-                                width: width - (width / 4),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    // button 7
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "7",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-                                          foregroundColor:
-                                              Colors.black, // foreground
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          addition('7');
-                                        },
+                            // 7-9
+                            Container(
+                              width: width - (width / 4),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                children: [
+                                  // button 7
+                                  Container(
+                                    height: btnHeight,
+                                    width: btnWidth,
+                                    child: ElevatedButton(
+                                      child: Text(
+                                        "7",
+                                        style: TextStyle(
+                                            fontSize: getadaptiveTextSize(
+                                                context, 40)),
                                       ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Color.fromARGB(
+                                            255, 236, 233, 232), // background
+                                        foregroundColor:
+                                            Colors.black, // foreground
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              12), // <-- Radius
+                                        ),
+                                      ),
+                                      onPressed: () {
+                                        addition('7');
+                                      },
                                     ),
+                                  ),
 
-                                    // button 8
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "8",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-                                          foregroundColor:
-                                              Colors.black, // foreground
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          addition('8');
-                                        },
+                                  // button 8
+                                  Container(
+                                    height: btnHeight,
+                                    width: btnWidth,
+                                    child: ElevatedButton(
+                                      child: Text(
+                                        "8",
+                                        style: TextStyle(
+                                            fontSize: getadaptiveTextSize(
+                                                context, 40)),
                                       ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Color.fromARGB(
+                                            255, 236, 233, 232), // background
+                                        foregroundColor:
+                                            Colors.black, // foreground
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              12), // <-- Radius
+                                        ),
+                                      ),
+                                      onPressed: () {
+                                        addition('8');
+                                      },
                                     ),
+                                  ),
 
-                                    // button 9
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "9",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-                                          foregroundColor:
-                                              Colors.black, // foreground
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          addition('9');
-                                        },
+                                  // button 9
+                                  Container(
+                                    height: btnHeight,
+                                    width: btnWidth,
+                                    child: ElevatedButton(
+                                      child: Text(
+                                        "9",
+                                        style: TextStyle(
+                                            fontSize: getadaptiveTextSize(
+                                                context, 40)),
                                       ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Color.fromARGB(
+                                            255, 236, 233, 232), // background
+                                        foregroundColor:
+                                            Colors.black, // foreground
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              12), // <-- Radius
+                                        ),
+                                      ),
+                                      onPressed: () {
+                                        addition('9');
+                                      },
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
+                            ),
 
-                              // clear-0-+
-                              Container(
-                                width: width - (width / 4),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    // button clear
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "C",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 20)),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-                                          foregroundColor:
-                                              Colors.black, // foreground
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          clear();
-                                        },
+                            // clear-0-+
+                            Container(
+                              width: width - (width / 4),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                children: [
+                                  // button clear
+                                  Container(
+                                    height: btnHeight,
+                                    width: btnWidth,
+                                    child: ElevatedButton(
+                                      child: Text(
+                                        "C",
+                                        style: TextStyle(
+                                            fontSize: getadaptiveTextSize(
+                                                context, 20)),
                                       ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Color.fromARGB(
+                                            255, 236, 233, 232), // background
+                                        foregroundColor:
+                                            Colors.black, // foreground
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              12), // <-- Radius
+                                        ),
+                                      ),
+                                      onPressed: () {
+                                        clear();
+                                      },
                                     ),
+                                  ),
 
-                                    // button 0
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth * 2,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "0",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-                                          foregroundColor:
-                                              Colors.black, // foreground
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          addition('0');
-                                        },
+                                  // button 0
+                                  Container(
+                                    height: btnHeight,
+                                    width: btnWidth * 2,
+                                    child: ElevatedButton(
+                                      child: Text(
+                                        "0",
+                                        style: TextStyle(
+                                            fontSize: getadaptiveTextSize(
+                                                context, 40)),
                                       ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Color.fromARGB(
+                                            255, 236, 233, 232), // background
+                                        foregroundColor:
+                                            Colors.black, // foreground
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              12), // <-- Radius
+                                        ),
+                                      ),
+                                      onPressed: () {
+                                        addition('0');
+                                      },
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                       Container(
-                        width: (width / 4),
+                        width: (width / 4) - width * 0.010,
                         height: height - 337,
                         child: Container(
                           child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               // / back button
                               Container(
                                 height: btnHeight * 2 + (btnHeight * 0.050),
-                                width: btnWidth,
+                                width: btnWidth - btnWidth * 0.00005,
                                 // color: Color.fromARGB(255, 236, 233, 232),
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
+                                child: TextButton(
+                                  style: TextButton.styleFrom(
                                     backgroundColor: Color.fromARGB(
                                         255, 236, 233, 232), // background
                                     foregroundColor: Colors.black, // foreground
@@ -2077,16 +2086,12 @@ class _MyHomePageState extends State<MyHomePage> {
                                           12), // <-- Radius
                                     ),
                                   ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      // Icon(Icons.currency_rupee_rounded, color: Colors.white,),
-                                      Icon(
-                                        Icons.arrow_back,
-                                        color: Colors.black,
-                                        size: 50,
-                                      ),
-                                    ],
+                                  child: Center(
+                                    child: Icon(
+                                      Icons.arrow_back,
+                                      color: Colors.black,
+                                      size: 50,
+                                    ),
                                   ),
                                   onPressed: () {
                                     backSpace();
@@ -2099,8 +2104,8 @@ class _MyHomePageState extends State<MyHomePage> {
                                 height: btnHeight * 2 + (btnHeight * 0.050),
                                 width: btnWidth,
                                 // color: Color.fromARGB(255, 236, 233, 232),
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
+                                child: TextButton(
+                                  style: TextButton.styleFrom(
                                     backgroundColor: Color.fromARGB(
                                         255, 236, 233, 232), // background
                                     foregroundColor: Colors.black, // foreground
@@ -2109,16 +2114,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                           12), // <-- Radius
                                     ),
                                   ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      // Icon(Icons.currency_rupee_rounded, color: Colors.white,),
-                                      Icon(
-                                        Icons.add,
-                                        color: Colors.black,
-                                        size: 50,
-                                      ),
-                                    ],
+                                  child: Icon(
+                                    Icons.add,
+                                    color: Colors.black,
+                                    size: 50,
                                   ),
                                   onPressed: () {
                                     // addition('+');

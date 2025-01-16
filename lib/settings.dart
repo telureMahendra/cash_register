@@ -115,19 +115,16 @@ class _SettingsWidgetState extends State<SettingsWidget> {
 
   changePrintLogo(status) async {
     final prefs = await SharedPreferences.getInstance();
-    var logo = prefs.getString('image')!;
+    var logo = prefs.getString('image') ?? '';
 
     if (logo.isNotEmpty) {
       isLogoPrint = status;
       prefs.setBool('isLogoPrint', isLogoPrint);
       setState(() {});
     } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const EditProfile(),
-        ),
-      );
+      setState(() {
+        _showPicker(context: context);
+      });
     }
   }
 

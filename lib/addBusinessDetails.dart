@@ -382,40 +382,40 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
                       return null;
                     },
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 10, horizontal: 20),
-                    child: Container(
-                      width: width,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.start,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Example UPI ID: username@bankname',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  color: Colors.black45,
-                                ),
-                              ),
-                              Container(
-                                width: width * 0.90,
-                                child: Text(
-                                  'Please note: Ensure you have entered a valid UPI ID. Incorrect UPI IDs may lead to payment issues, such as payments being received by someone else. We are not responsible for any issues arising from incorrect UPI ID entries.',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                              )
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  // Padding(
+                  //   padding: const EdgeInsets.symmetric(
+                  //       vertical: 10, horizontal: 20),
+                  //   child: Container(
+                  //     width: width,
+                  //     child: Row(
+                  //       mainAxisAlignment: MainAxisAlignment.start,
+                  //       children: [
+                  //         Column(
+                  //           crossAxisAlignment: CrossAxisAlignment.start,
+                  //           children: [
+                  //             Text(
+                  //               'Example UPI ID: username@bankname',
+                  //               style: TextStyle(
+                  //                 fontSize: 15,
+                  //                 color: Colors.black45,
+                  //               ),
+                  //             ),
+                  //             Container(
+                  //               width: width * 0.90,
+                  //               child: Text(
+                  //                 'Please note: Ensure you have entered a valid UPI ID. Incorrect UPI IDs may lead to payment issues, such as payments being received by someone else. We are not responsible for any issues arising from incorrect UPI ID entries.',
+                  //                 style: TextStyle(
+                  //                   fontSize: 16,
+                  //                   color: Colors.black54,
+                  //                 ),
+                  //               ),
+                  //             )
+                  //           ],
+                  //         ),
+                  //       ],
+                  //     ),
+                  //   ),
+                  // ),
                   TextFieldInput(
                     icon: Icons.percent,
                     textEditingController: gstNumberController,

@@ -41,6 +41,7 @@ dependencies:
   flutter_timer_countdown: ^1.0.7
   carousel_slider: ^5.0.0
   image_picker: ^1.1.2
+  connectivity_plus:
 
 
   math_expressions: ^2.6.0

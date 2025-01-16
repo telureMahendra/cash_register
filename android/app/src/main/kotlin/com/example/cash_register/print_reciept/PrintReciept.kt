@@ -109,7 +109,6 @@ class PrintReciept() {
 
         val note = "Note: Goods once sold will not be taken back or exchanged."
 
-
         printer.cleanCache()
         printer.printTypesettingType = GlobalDef.PRINTERLAYOUT_TYPESETTING
         printer.setPrintGray(Integer.valueOf(1000))

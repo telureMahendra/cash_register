@@ -353,6 +353,16 @@ class _EditBusinessDetailsState extends State<EditBusinessDetails> {
                   //     return null;
                   //   },
                   // ),
+                  TextFieldInput(
+                    icon: Icons.percent,
+                    textEditingController: gstNumberController,
+                    hintText: 'GST Number(Optional)',
+                    textInputType: TextInputType.text,
+                    length: 30,
+                    validator: (value) {
+                      return null;
+                    },
+                  ),
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         vertical: 10, horizontal: 20),
