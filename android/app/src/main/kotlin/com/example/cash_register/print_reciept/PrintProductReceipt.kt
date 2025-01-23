@@ -1,12 +1,16 @@
 package com.example.cash_register.print_reciept
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
 import android.os.Message
+import android.util.Base64
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import com.basewin.aidl.OnPrinterListener
 import com.basewin.define.GlobalDef
+import com.basewin.models.BitmapPrintLine
+import com.basewin.models.PrintLine
 import com.basewin.models.TextPrintLine
 import com.basewin.services.PrinterBinder
 import com.basewin.services.ServiceManager
@@ -14,15 +18,8 @@ import com.example.cash_register.MainApplication
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-//import java.util.Base64
-import android.util.Base64
 
-import android.graphics.Bitmap
-import com.basewin.models.BitmapPrintLine
-import com.basewin.models.PrintLine
-import kotlin.reflect.typeOf
-
-class PrintReciept() {
+class PrintProductReceipt {
 
     fun vizAddSpace(spaceLength: Int): String {
         var tempStr = ""
@@ -38,65 +35,7 @@ class PrintReciept() {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun printImage(encodedImage: String){
-        ServiceManager.getInstence().init(MainApplication.currentApplicationContext)
-        val printer: PrinterBinder = ServiceManager.getInstence().printer
-        printer.cleanCache()
-        printer.printTypesettingType = GlobalDef.PRINTERLAYOUT_TYPESETTING
-        printer.setPrintGray(Integer.valueOf(1000))
-        printer.setPrintFontByAsserts("RobotoMono.ttf")
-        printer.setLineSpace(0)
-        val textPrintLine = TextPrintLine()
-
-
-        val options = BitmapFactory.Options()
-        options.inScaled = false
-        var bitmap: Bitmap? = null
-
-        try {
-            bitmap= decodeBase64ToBitmap(encodedImage)
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        if (bitmap != null) {
-            val bitmapPrintLine = BitmapPrintLine()
-            bitmapPrintLine.type = PrintLine.BITMAP
-            bitmapPrintLine.position = PrintLine.CENTER
-            bitmapPrintLine.bitmap = bitmap
-
-            try {
-                printer?.addPrintLine(bitmapPrintLine)
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        }
-
-//        textPrintLine.content = "\n\n"
-//        printer.addPrintLine(textPrintLine)
-
-        // start print here
-        printer.beginPrint(object : OnPrinterListener {
-            override fun onError(p0: Int, error: String?) {
-                Toast.makeText(MainApplication.currentApplicationContext, "Error", Toast.LENGTH_SHORT).show()
-                val msg = Message()
-                msg.data.putString("msg", "print error,errno:$p0")
-
-                printer.cleanCache()
-            }
-
-            override fun onFinish() {
-//            TODO("Not yet implemented")
-            }
-
-            override fun onStart() {
-//            TODO("Not yet implemented")
-            }
-        }
-        )
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun printCartReceipt(shopName:String, address: String, shopEmail:String, shopMobile:String, amount:String, gstNumber:String, isPrintGST: String, encodedImage: String, items: Any?) {
+    fun printProductReceipt(shopName:String, address: String, shopEmail:String, shopMobile:String, amount:String, gstNumber:String, isPrintGST: String, encodedImage: String, items: Any?) {
 
         ServiceManager.getInstence().init(MainApplication.currentApplicationContext)
         val printer: PrinterBinder = ServiceManager.getInstence().printer
@@ -209,28 +148,46 @@ class PrintReciept() {
         printer.addPrintLine(textPrintLine)
 
         textPrintLine.size = TextPrintLine.FONT_NORMAL
-        textPrintLine.content = " Items${vizAddSpace(15)}Amount"
+        textPrintLine.content = "Items${vizAddSpace(8)}Qty${vizAddSpace(5)}Amount"
         printer.addPrintLine(textPrintLine)
 
         textPrintLine.size = TextPrintLine.FONT_SMALL
         textPrintLine.content = "--------------------------------------"
         printer.addPrintLine(textPrintLine)
 
+
+//        textPrintLine.size = TextPrintLine.FONT_SMALL
+//        textPrintLine.content = items.toString()
+//        printer.addPrintLine(textPrintLine)
+
+
+
+
         val itemsString = items.toString()
-        val keyValuePairs = itemsString.substring(1, itemsString.length - 1).split("'")
-        val map = mutableMapOf<String, String>()
-        for (pair in keyValuePairs) {
-            val keyValue = pair.split("=")
-            map[keyValue[0]] = keyValue[1]
-
-            printer.setLineSpace(0)
-            textPrintLine.size=TextPrintLine.FONT_SMALL
-            textPrintLine.isBold = true
-            textPrintLine.position = TextPrintLine.RIGHT
-            textPrintLine.content = "Item${vizAddSpace(31-keyValue[1].length)}${keyValue[1]} "
+        val keyValuePairs = itemsString.substring(0, itemsString.length - 1).split('"')
+        for (pair in keyValuePairs){
+            val productDetails = pair.substring(0, pair.length - 1).split('.')
+            textPrintLine.size = TextPrintLine.FONT_SMALL
+            textPrintLine.isBold= true
+//            textPrintLine.content = productDetails[0] + productDetails[1] + productDetails[2]
+            textPrintLine.content = "${productDetails[0]}${vizAddSpace(20-productDetails[0].length)}${productDetails[1]}${vizAddSpace((18-productDetails[2].length)-productDetails[1].length)}${productDetails[2]}"
             printer.addPrintLine(textPrintLine)
-
         }
+
+//        val map = mutableMapOf<String, String>()
+//        for (pair in keyValuePairs) {
+//            val keyValue = pair.split("=")
+//            map[keyValue[0]] = keyValue[1]
+//
+//            printer.setLineSpace(0)
+//            textPrintLine.size= TextPrintLine.FONT_SMALL
+//            textPrintLine.isBold = true
+//            textPrintLine.position = TextPrintLine.RIGHT
+//            textPrintLine.content = map.toString()
+////            textPrintLine.content = "Item${vizAddSpace(31-keyValue[1].length)}${keyValue[1]} "
+//            printer.addPrintLine(textPrintLine)
+//
+//        }
 
 //        printer.setLineSpace(10)
 //        textPrintLine.size=TextPrintLine.FONT_SMALL
@@ -251,7 +208,7 @@ class PrintReciept() {
         printer.addPrintLine(textPrintLine)
 
         textPrintLine.isBold = false
-        textPrintLine.size=TextPrintLine.FONT_SMALL
+        textPrintLine.size= TextPrintLine.FONT_SMALL
         textPrintLine.content = "======================================"
         printer.addPrintLine(textPrintLine)
 
@@ -319,4 +276,6 @@ class PrintReciept() {
 
 
     }
+
+
 }

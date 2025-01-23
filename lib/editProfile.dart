@@ -183,6 +183,7 @@ class _EditProfileState extends State<EditProfile> {
             style: TextStyle(color: Colors.white, fontFamily: 'Becham'),
           ),
           backgroundColor: Colors.blue,
+          foregroundColor: Colors.white,
           centerTitle: false,
         ),
         backgroundColor: Colors.white,

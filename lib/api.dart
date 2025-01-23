@@ -47,6 +47,7 @@ class _ApiFetchState extends State<ApiFetch> {
         title: Text("API Fetch"),
         centerTitle: false,
         backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
       ),
       resizeToAvoidBottomInset: false,
       body: FutureBuilder<List<TransactionDetails>>(

@@ -1,0 +1,7 @@
+-dontwarn com.google.zxing.BarcodeFormat
+-dontwarn com.google.zxing.EncodeHintType
+-dontwarn com.google.zxing.MultiFormatWriter
+-dontwarn com.google.zxing.WriterException
+-dontwarn com.google.zxing.common.BitMatrix
+-dontwarn com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
+-dontwarn com.odm.tty.TtyDevice

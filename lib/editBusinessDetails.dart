@@ -6,7 +6,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cash_register/Widgets/button.dart';
 import 'package:cash_register/Widgets/text_field.dart';
 import 'package:cash_register/helper/helper.dart';
-import 'package:cash_register/my_home_page.dart';
+import 'package:cash_register/Calculator.dart';
 import 'package:cash_register/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
@@ -294,6 +294,7 @@ class _EditBusinessDetailsState extends State<EditBusinessDetails> {
             style: TextStyle(color: Colors.white, fontFamily: 'Becham'),
           ),
           backgroundColor: Colors.blue,
+          foregroundColor: Colors.white,
           centerTitle: false,
         ),
         backgroundColor: Colors.white,
@@ -439,7 +440,7 @@ class _EditBusinessDetailsState extends State<EditBusinessDetails> {
                                 ),
                               ),
                               Container(
-                                width: width * 0.90,
+                                width: width * 0.85,
                                 child: Text(
                                   'Please note: Ensure you have entered a valid UPI ID. Incorrect UPI IDs may lead to payment issues, such as payments being received by someone else. We are not responsible for any issues arising from incorrect UPI ID entries.',
                                   style: TextStyle(

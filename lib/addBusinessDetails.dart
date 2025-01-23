@@ -6,7 +6,8 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cash_register/Widgets/button.dart';
 import 'package:cash_register/Widgets/text_field.dart';
 import 'package:cash_register/helper/helper.dart';
-import 'package:cash_register/my_home_page.dart';
+import 'package:cash_register/Calculator.dart';
+import 'package:cash_register/homepage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:http/http.dart' as http;
@@ -177,7 +178,7 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => const MyHomePage(title: "Bill Register"),
+              builder: (context) => const Homepage(),
             ),
           );
           //  Navigator.of(context).pushAndRemoveUntil(

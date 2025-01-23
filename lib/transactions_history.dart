@@ -1,10 +1,15 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:cash_register/db/sqfLiteDBService.dart';
 import 'package:cash_register/helper/helper.dart';
 import 'package:cash_register/helper/transaction_helper.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/src/widgets/framework.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
@@ -19,14 +24,6 @@ class TransactionsHistory extends StatefulWidget {
 }
 
 class _TransactionsHistoryState extends State<TransactionsHistory> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      // getTransactions();
-    });
-  }
-
   // Future<void> getTransactions() async {
   //   print(DateFormat().format(DateTime.now()));
   //   SharedPreferences.getInstance().then((data) {
@@ -56,22 +53,109 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
 
   final dbs = DatabaseService.instance;
   List<Map<String, Object?>>? _billData;
+  late StreamSubscription _streamSubscription;
+  bool isDeviceConnected = false;
+
+  internetConnection() =>
+      _streamSubscription = Connectivity().onConnectivityChanged.listen(
+        (event) async {
+          isDeviceConnected =
+              await InternetConnectionChecker.instance.hasConnection;
+        },
+      );
 
   Future<List<TransactionDetailsSQL>> _fetchDatao() async {
+    print("in fetch method");
     List<Map<String, Object?>>? data = await dbs.getDBdata();
     print(TransactionDetailsSQL.fromJsonList(data));
     return TransactionDetailsSQL.fromJsonList(data);
-    // json.decode(utf8.decode(data)));
-    // setState(() {
-    //   _billData = data;
-    // });
   }
 
-  Future<List<TransactionDetailsSQL>> _fetchData() async {
+  Future<List> _fetchData() async {
     List<Map<String, Object?>>? data = await dbs.getDBdata();
+    print("in fetch method");
     List<TransactionDetailsSQL> transactionList =
         data.map((item) => TransactionDetailsSQL.fromJson(item)).toList();
     return transactionList.reversed.toList();
+  }
+
+  static List<dynamic> sortListByDate(List<dynamic> list) {
+    // list.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+    list.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+    return list;
+  }
+
+  Future<List<dynamic>> combineData() async {
+    if (isDeviceConnected) {
+      print("Device connected");
+    } else {
+      print("device is not connected");
+    }
+
+    Future<List> data = _fetchData();
+    print("data loaded from the sqlite");
+    Future<List> data1 = fetchTransactionServer();
+    print("data loaded from the server");
+
+    List<dynamic> list1 = await data;
+    List<dynamic> list2 = await data1;
+
+    List<dynamic> combinedList = [...list1, ...list2];
+
+    // return combinedList;
+    return sortListByDate(combinedList);
+  }
+
+  Future<List> fetchTransactionServer() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    List data = [];
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(
+          child: Lottie.asset('assets/animations/loader.json',
+              height: MediaQuery.of(context).size.height * 0.17,
+              // controller: _controller,
+              repeat: true,
+              animate: true),
+        );
+      },
+    );
+
+    try {
+      final response = await http.get(
+        Uri.parse('$BASE_URL/transaction'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'userId': '${prefs.getInt('userId')}',
+          'itemCount': "88",
+          'pageNumber': "0",
+          "date": "Jan 18, 2025"
+        },
+      );
+
+      // response = utf8.decode(response.bodyBytes);
+
+      if (response.statusCode == 200) {
+        Navigator.pop(context);
+        return TransactionDetails.fromJsonList(
+            json.decode(utf8.decode(response.bodyBytes)));
+        // return TransactionDetails.fromJsonList(json.decode(response.body));
+      } else {
+        //  return  Text('No transaction data');
+        Navigator.pop(context);
+        // return Text("data");
+        alertMessage(response.body.toString());
+        throw Exception('Request Failed.');
+        // return ;
+      }
+    } on SocketException catch (e) {
+      Navigator.pop(context);
+      return data;
+    }
   }
 
   getadaptiveTextSize(BuildContext context, dynamic value) {
@@ -118,6 +202,23 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
       throw Exception('Request Failed.');
       // return ;
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {});
+
+    // internetConnection();
+    syncStatus();
+
+    // setState(() {});
+  }
+
+  @override
+  void dispose() {
+    // _streamSubscription1.cancel();
+    super.dispose();
   }
 
   alertMessage(msg) {
@@ -188,6 +289,24 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
   //   });
   // }
 
+  bool isSynced = false;
+
+  Future<void> syncStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    List<TransactionDetailsSQL> unsyncedTransactions =
+        await dbs.getUnsyncedTransactions();
+
+    if (unsyncedTransactions.isNotEmpty) {
+      prefs.getBool("isSynced") ?? false;
+      isSynced = false;
+    } else {
+      isSynced = true;
+      prefs.getBool("isSynced") ?? true;
+    }
+    setState(() {});
+  }
+
   var size, width, height;
 
   var transactionList = [];
@@ -198,373 +317,465 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
     width = size.width;
     height = size.height;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Transactions',
-          style: TextStyle(color: Colors.white, fontFamily: 'Becham'),
+        appBar: AppBar(
+          title: Text(
+            'Transactions',
+            style: TextStyle(color: Colors.white, fontFamily: 'Becham'),
+          ),
+          backgroundColor: Colors.blue,
+          foregroundColor: Colors.white,
         ),
-        backgroundColor: Colors.blue,
-      ),
 
-      // body: Center(
-      //   child: ListView.builder(
-      //     itemBuilder: (context, index) {
-      //       return Center(
-      //         child: Card(
-      //             elevation: 5,
-      //             child: Padding(
-      //               padding: const EdgeInsets.all(8.0),
-      //               child: Container(
-      //                   height: height * 0.15,
-      //                   width: width * 0.90,
-      //                   child: Row(
-      //                     // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      //                     // crossAxisAlignment: CrossAxisAlignment.start,
-      //                     children: [
-      //                       Container(
-      //                         width: width * 0.60,
-      //                         child: Column(
-      //                           crossAxisAlignment: CrossAxisAlignment.center,
-      //                           children: [
-      //                             Container(
-      //                               width: width - (width / 4),
-      //                               // height: 130,
-      //                               child: Row(
-      //                                 mainAxisAlignment:
-      //                                     MainAxisAlignment.spaceBetween,
-      //                                 children: [
-      //                                   Container(
-      //                                     padding: EdgeInsets.only(top: 10),
-      //                                     child: Text(
-      //                                       '+ ${transactionList[index]["amount"]}',
-      //                                       style: TextStyle(
-      //                                         fontSize: getadaptiveTextSize(
-      //                                             context, 15),
-      //                                         color: Colors.green,
-      //                                       ),
-      //                                     ),
-      //                                   ),
-      //                                 ],
-      //                               ),
-      //                             ),
-      //                             Container(
-      //                               width: width - (width / 4),
-      //                               height: height * 0.08,
-      //                               padding:
-      //                                   EdgeInsets.only(top: 20, left: 26),
-      //                               child: Column(
-      //                                   mainAxisAlignment:
-      //                                       MainAxisAlignment.spaceBetween,
-      //                                   crossAxisAlignment:
-      //                                       CrossAxisAlignment.start,
-      //                                   children: [
-      //                                     Text(
-      //                                         '${transactionList[index]["dateTime"]}'),
-      //                                     Text(
-      //                                         '${transactionList[index]["time"]}')
-      //                                   ]),
-      //                             ),
-      //                           ],
-      //                         ),
-      //                       ),
-      //                       Container(
+        // body: Center(
+        //   child: ListView.builder(
+        //     itemBuilder: (context, index) {
+        //       return Center(
+        //         child: Card(
+        //             elevation: 5,
+        //             child: Padding(
+        //               padding: const EdgeInsets.all(8.0),
+        //               child: Container(
+        //                   height: height * 0.15,
+        //                   width: width * 0.90,
+        //                   child: Row(
+        //                     // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        //                     // crossAxisAlignment: CrossAxisAlignment.start,
+        //                     children: [
+        //                       Container(
+        //                         width: width * 0.60,
+        //                         child: Column(
+        //                           crossAxisAlignment: CrossAxisAlignment.center,
+        //                           children: [
+        //                             Container(
+        //                               width: width - (width / 4),
+        //                               // height: 130,
+        //                               child: Row(
+        //                                 mainAxisAlignment:
+        //                                     MainAxisAlignment.spaceBetween,
+        //                                 children: [
+        //                                   Container(
+        //                                     padding: EdgeInsets.only(top: 10),
+        //                                     child: Text(
+        //                                       '+ ${transactionList[index]["amount"]}',
+        //                                       style: TextStyle(
+        //                                         fontSize: getadaptiveTextSize(
+        //                                             context, 15),
+        //                                         color: Colors.green,
+        //                                       ),
+        //                                     ),
+        //                                   ),
+        //                                 ],
+        //                               ),
+        //                             ),
+        //                             Container(
+        //                               width: width - (width / 4),
+        //                               height: height * 0.08,
+        //                               padding:
+        //                                   EdgeInsets.only(top: 20, left: 26),
+        //                               child: Column(
+        //                                   mainAxisAlignment:
+        //                                       MainAxisAlignment.spaceBetween,
+        //                                   crossAxisAlignment:
+        //                                       CrossAxisAlignment.start,
+        //                                   children: [
+        //                                     Text(
+        //                                         '${transactionList[index]["dateTime"]}'),
+        //                                     Text(
+        //                                         '${transactionList[index]["time"]}')
+        //                                   ]),
+        //                             ),
+        //                           ],
+        //                         ),
+        //                       ),
+        //                       Container(
 
-      //                           // width: (width-(width/4)*3),
-      //                           width: width * 0.30,
-      //                           child: Column(
-      //                             mainAxisAlignment:
-      //                                 MainAxisAlignment.spaceEvenly,
-      //                             children: [
-      //                               if (transactionList[index]["Method"] ==
-      //                                   "CASH")
-      //                                 Icon(
-      //                                   Icons.money,
-      //                                   size: width * 0.10,
-      //                                 ),
-      //                               if (transactionList[index]["Method"] !=
-      //                                   "CASH")
-      //                                 Icon(
-      //                                   Icons.qr_code,
-      //                                   // size: width * 0.10,
-      //                                   size:
-      //                                       getadaptiveTextSize(context, 30),
-      //                                 ),
-      //                               Text(
-      //                                 '${transactionList[index]["Method"]}',
-      //                                 style: TextStyle(
-      //                                     fontSize: getadaptiveTextSize(
-      //                                         context, 12)),
-      //                               )
-      //                             ],
-      //                           )),
-      //                     ],
-      //                   )),
-      //             )),
-      //       );
-      //     },
-      //     itemCount: transactionList.length,
-      //   ),
-      // )
+        //                           // width: (width-(width/4)*3),
+        //                           width: width * 0.30,
+        //                           child: Column(
+        //                             mainAxisAlignment:
+        //                                 MainAxisAlignment.spaceEvenly,
+        //                             children: [
+        //                               if (transactionList[index]["Method"] ==
+        //                                   "CASH")
+        //                                 Icon(
+        //                                   Icons.money,
+        //                                   size: width * 0.10,
+        //                                 ),
+        //                               if (transactionList[index]["Method"] !=
+        //                                   "CASH")
+        //                                 Icon(
+        //                                   Icons.qr_code,
+        //                                   // size: width * 0.10,
+        //                                   size:
+        //                                       getadaptiveTextSize(context, 30),
+        //                                 ),
+        //                               Text(
+        //                                 '${transactionList[index]["Method"]}',
+        //                                 style: TextStyle(
+        //                                     fontSize: getadaptiveTextSize(
+        //                                         context, 12)),
+        //                               )
+        //                             ],
+        //                           )),
+        //                     ],
+        //                   )),
+        //             )),
+        //       );
+        //     },
+        //     itemCount: transactionList.length,
+        //   ),
+        // )
 
-      // body: FutureBuilder<List<TransactionDetails>>(
-      //   future: fetchTransaction(),
-      //   builder: (context, snapshot) {
-      //     if (snapshot.connectionState == ConnectionState.waiting) {
-      //       return Center(
-      //         // child: CircularProgressIndicator(),
-      //         child: null,
-      //       );
-      //     } else if (snapshot.hasError) {
-      //       return Center(
-      //         child: Text(
-      //           'Error: ${snapshot.error}',
-      //           style: TextStyle(
-      //               color: Colors.red,
-      //               fontSize: getadaptiveTextSize(context, 20)),
-      //         ),
-      //       ); // Handle error
-      //     } else if (snapshot.hasData) {
-      //       return ListView.builder(
-      //         itemCount: snapshot.data!.length,
-      //         itemBuilder: (context, index) {
-      //           final transaction = snapshot.data![index];
-      //           // print(transaction.time);
-      //           // return ListTile(
-      //           //   title: Text(transaction.method),
-      //           //   subtitle: Text('${transaction.date} - ${transaction.time}'),
-      //           //   trailing: Text(transaction.amount),
-      //           // );
-      //           return (Center(
-      //             child: Card(
-      //                 elevation: 5,
-      //                 child: Padding(
-      //                   padding: const EdgeInsets.all(8.0),
-      //                   child: Container(
-      //                       height: height * 0.15,
-      //                       width: width * 0.90,
-      //                       child: Row(
-      //                         // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      //                         // crossAxisAlignment: CrossAxisAlignment.start,
-      //                         children: [
-      //                           Container(
-      //                             width: width * 0.60,
-      //                             child: Column(
-      //                               crossAxisAlignment:
-      //                                   CrossAxisAlignment.center,
-      //                               children: [
-      //                                 Container(
-      //                                   width: width - (width / 4),
-      //                                   // height: 130,
-      //                                   child: Row(
-      //                                     mainAxisAlignment:
-      //                                         MainAxisAlignment.spaceBetween,
-      //                                     children: [
-      //                                       Container(
-      //                                         padding: EdgeInsets.only(top: 10),
-      //                                         child: Text(
-      //                                           '+ ${transaction.amount.toString()}',
-      //                                           style: TextStyle(
-      //                                             fontSize: getadaptiveTextSize(
-      //                                                 context, 15),
-      //                                             color: Colors.green,
-      //                                           ),
-      //                                         ),
-      //                                       ),
-      //                                     ],
-      //                                   ),
-      //                                 ),
-      //                                 Container(
-      //                                   width: width - (width / 4),
-      //                                   height: height * 0.08,
-      //                                   padding:
-      //                                       EdgeInsets.only(top: 20, left: 26),
-      //                                   child: Column(
-      //                                       mainAxisAlignment:
-      //                                           MainAxisAlignment.spaceBetween,
-      //                                       crossAxisAlignment:
-      //                                           CrossAxisAlignment.start,
-      //                                       children: [
-      //                                         Text(
-      //                                             '${transaction.date.toString()}'),
-      //                                         Text('${transaction.time}')
-      //                                       ]),
-      //                                 ),
-      //                               ],
-      //                             ),
-      //                           ),
-      //                           Container(
+        // body: FutureBuilder<List<TransactionDetails>>(
+        //   future: fetchTransaction(),
+        //   builder: (context, snapshot) {
+        //     if (snapshot.connectionState == ConnectionState.waiting) {
+        //       return Center(
+        //         // child: CircularProgressIndicator(),
+        //         child: null,
+        //       );
+        //     } else if (snapshot.hasError) {
+        //       return Center(
+        //         child: Text(
+        //           'Error: ${snapshot.error}',
+        //           style: TextStyle(
+        //               color: Colors.red,
+        //               fontSize: getadaptiveTextSize(context, 20)),
+        //         ),
+        //       ); // Handle error
+        //     } else if (snapshot.hasData) {
+        //       return ListView.builder(
+        //         itemCount: snapshot.data!.length,
+        //         itemBuilder: (context, index) {
+        //           final transaction = snapshot.data![index];
+        //           // print(transaction.time);
+        //           // return ListTile(
+        //           //   title: Text(transaction.method),
+        //           //   subtitle: Text('${transaction.date} - ${transaction.time}'),
+        //           //   trailing: Text(transaction.amount),
+        //           // );
+        //           return (Center(
+        //             child: Card(
+        //                 elevation: 5,
+        //                 child: Padding(
+        //                   padding: const EdgeInsets.all(8.0),
+        //                   child: Container(
+        //                       height: height * 0.15,
+        //                       width: width * 0.90,
+        //                       child: Row(
+        //                         // mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        //                         // crossAxisAlignment: CrossAxisAlignment.start,
+        //                         children: [
+        //                           Container(
+        //                             width: width * 0.60,
+        //                             child: Column(
+        //                               crossAxisAlignment:
+        //                                   CrossAxisAlignment.center,
+        //                               children: [
+        //                                 Container(
+        //                                   width: width - (width / 4),
+        //                                   // height: 130,
+        //                                   child: Row(
+        //                                     mainAxisAlignment:
+        //                                         MainAxisAlignment.spaceBetween,
+        //                                     children: [
+        //                                       Container(
+        //                                         padding: EdgeInsets.only(top: 10),
+        //                                         child: Text(
+        //                                           '+ ${transaction.amount.toString()}',
+        //                                           style: TextStyle(
+        //                                             fontSize: getadaptiveTextSize(
+        //                                                 context, 15),
+        //                                             color: Colors.green,
+        //                                           ),
+        //                                         ),
+        //                                       ),
+        //                                     ],
+        //                                   ),
+        //                                 ),
+        //                                 Container(
+        //                                   width: width - (width / 4),
+        //                                   height: height * 0.08,
+        //                                   padding:
+        //                                       EdgeInsets.only(top: 20, left: 26),
+        //                                   child: Column(
+        //                                       mainAxisAlignment:
+        //                                           MainAxisAlignment.spaceBetween,
+        //                                       crossAxisAlignment:
+        //                                           CrossAxisAlignment.start,
+        //                                       children: [
+        //                                         Text(
+        //                                             '${transaction.date.toString()}'),
+        //                                         Text('${transaction.time}')
+        //                                       ]),
+        //                                 ),
+        //                               ],
+        //                             ),
+        //                           ),
+        //                           Container(
 
-      //                               // width: (width-(width/4)*3),
-      //                               width: width * 0.30,
-      //                               child: Column(
-      //                                 mainAxisAlignment:
-      //                                     MainAxisAlignment.spaceEvenly,
-      //                                 children: [
-      //                                   if (transaction.method == "CASH")
-      //                                     Icon(
-      //                                       Icons.money,
-      //                                       size: width * 0.10,
-      //                                     ),
-      //                                   if (transaction.method != "CASH")
-      //                                     Icon(
-      //                                       Icons.qr_code,
-      //                                       // size: width * 0.10,
-      //                                       size: getadaptiveTextSize(
-      //                                           context, 30),
-      //                                     ),
-      //                                   Text(
-      //                                     '${transaction.method}',
-      //                                     style: TextStyle(
-      //                                         fontSize: getadaptiveTextSize(
-      //                                             context, 12)),
-      //                                   )
-      //                                 ],
-      //                               )),
-      //                         ],
-      //                       )),
-      //                 )),
-      //           ));
-      //         },
-      //       );
-      //     } else if (!snapshot.hasData) {
-      //       return Center(
-      //         child: Text("No Transactions"),
-      //       );
-      //     } else {
-      //       return Text('No transaction data'); // Handle empty data case
-      //     }
-      //   },
-      // ),
+        //                               // width: (width-(width/4)*3),
+        //                               width: width * 0.30,
+        //                               child: Column(
+        //                                 mainAxisAlignment:
+        //                                     MainAxisAlignment.spaceEvenly,
+        //                                 children: [
+        //                                   if (transaction.method == "CASH")
+        //                                     Icon(
+        //                                       Icons.money,
+        //                                       size: width * 0.10,
+        //                                     ),
+        //                                   if (transaction.method != "CASH")
+        //                                     Icon(
+        //                                       Icons.qr_code,
+        //                                       // size: width * 0.10,
+        //                                       size: getadaptiveTextSize(
+        //                                           context, 30),
+        //                                     ),
+        //                                   Text(
+        //                                     '${transaction.method}',
+        //                                     style: TextStyle(
+        //                                         fontSize: getadaptiveTextSize(
+        //                                             context, 12)),
+        //                                   )
+        //                                 ],
+        //                               )),
+        //                         ],
+        //                       )),
+        //                 )),
+        //           ));
+        //         },
+        //       );
+        //     } else if (!snapshot.hasData) {
+        //       return Center(
+        //         child: Text("No Transactions"),
+        //       );
+        //     } else {
+        //       return Text('No transaction data'); // Handle empty data case
+        //     }
+        //   },
+        // ),
 
-      body: FutureBuilder<List<TransactionDetailsSQL>>(
-        future: _fetchData(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
-              // child: CircularProgressIndicator(),
-              child: null,
-            );
-          } else if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                'Error: ${snapshot.error}',
-                style: TextStyle(
-                    color: Colors.red,
-                    fontSize: getadaptiveTextSize(context, 20)),
-              ),
-            ); // Handle error
-          } else if (snapshot.hasData) {
-            return ListView.builder(
-              itemCount: snapshot.data!.length,
-              itemBuilder: (context, index) {
-                final transaction = snapshot.data![index];
-                // print(transaction.time);
-                // return ListTile(
-                //   title: Text(transaction.method),
-                //   subtitle: Text('${transaction.date} - ${transaction.time}'),
-                //   trailing: Text(transaction.amount),
-                // );
-                return (Center(
-                  child: Card(
-                      elevation: 5,
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Container(
-                            height: height * 0.15,
-                            width: width * 0.90,
-                            child: Row(
-                              // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              // crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  width: width * 0.60,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      Container(
-                                        width: width - (width / 4),
-                                        // height: 130,
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Container(
-                                              padding: EdgeInsets.only(top: 10),
-                                              child: Text(
-                                                '+ ${transaction.amount.toString()}',
-                                                style: TextStyle(
-                                                  fontSize: getadaptiveTextSize(
-                                                      context, 15),
-                                                  color: Colors.green,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Container(
-                                        width: width - (width / 4),
-                                        height: height * 0.08,
-                                        padding:
-                                            EdgeInsets.only(top: 20, left: 26),
-                                        child: Column(
+        body: Center(
+          child: Container(
+            child: Column(
+              children: [
+                isSynced
+                    ? Container(
+                        height: height * 0.030,
+                        color: Colors.green,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.sync),
+                            Text("Transaction Synced")
+                          ],
+                        ),
+                      )
+                    : Container(
+                        height: height * 0.030,
+                        color: Colors.orange,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.sync_problem),
+                            Text("Transaction Not Synced")
+                          ],
+                        ),
+                      ),
+                Container(
+                  child: Expanded(
+                    child: FutureBuilder<List>(
+                      future: combineData(),
+                      // future: combineData(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return Center(
+                            // child: CircularProgressIndicator(),
+                            child: null,
+                          );
+                        } else if (snapshot.hasError) {
+                          return Center(
+                            child: Text(
+                              'Error: ${snapshot.error}',
+                              style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: getadaptiveTextSize(context, 20)),
+                            ),
+                          ); // Handle error
+                        } else if (snapshot.hasData) {
+                          return ListView.builder(
+                            itemCount: snapshot.data!.length,
+                            itemBuilder: (context, index) {
+                              final transaction = snapshot.data![index];
+                              // print(transaction.time);
+                              // return ListTile(
+                              //   title: Text(transaction.method),
+                              //   subtitle: Text('${transaction.date} - ${transaction.time}'),
+                              //   trailing: Text(transaction.amount),
+                              // );
+                              return (Center(
+                                child: Card(
+                                    elevation: 5,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Container(
+                                          height: height * 0.15,
+                                          width: width * 0.90,
+                                          child: Row(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceBetween,
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                            // crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Text(
-                                                  '${transaction.date.toString()}'),
-                                              Text('${transaction.time}')
-                                            ]),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Container(
+                                              Container(
+                                                width: width * 0.40,
+                                                child: Column(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.center,
+                                                  children: [
+                                                    Container(
+                                                      width:
+                                                          width - (width / 4),
+                                                      // height: 130,
+                                                      child: Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .spaceBetween,
+                                                        children: [
+                                                          Container(
+                                                            padding:
+                                                                EdgeInsets.only(
+                                                                    top: 10),
+                                                            child: Text(
+                                                              '+ ${transaction.amount.toString()}',
+                                                              style: TextStyle(
+                                                                fontSize:
+                                                                    getadaptiveTextSize(
+                                                                        context,
+                                                                        15),
+                                                                color: Colors
+                                                                    .green,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    Container(
+                                                      width:
+                                                          width - (width / 4),
+                                                      height: height * 0.08,
+                                                      padding: EdgeInsets.only(
+                                                          top: 20, left: 26),
+                                                      child: Column(
+                                                          mainAxisAlignment:
+                                                              MainAxisAlignment
+                                                                  .spaceBetween,
+                                                          crossAxisAlignment:
+                                                              CrossAxisAlignment
+                                                                  .start,
+                                                          children: [
+                                                            Text(
+                                                                '${transaction.date.toString()}'),
+                                                            Text(
+                                                                '${transaction.time}')
+                                                          ]),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              // (transaction.status.toString() ==
+                                              //         1)
+                                              //     ? changeSyncStatus(true)
+                                              //     : changeSyncStatus(false)
 
-                                    // width: (width-(width/4)*3),
-                                    width: width * 0.30,
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        if (transaction.method == "CASH")
-                                          Icon(
-                                            Icons.money,
-                                            size: width * 0.10,
-                                          ),
-                                        if (transaction.method != "CASH")
-                                          Icon(
-                                            Icons.qr_code,
-                                            // size: width * 0.10,
-                                            size: getadaptiveTextSize(
-                                                context, 30),
-                                          ),
-                                        Text(
-                                          '${transaction.method}',
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 12)),
-                                        )
-                                      ],
+                                              (transaction.status.toString() ==
+                                                      '1')
+                                                  ? Container(
+                                                      // color: Colors.green,
+                                                      // child: Text(transaction
+                                                      //     .status
+                                                      //     .toString())
+                                                      // Icon(
+                                                      //   Icons.sync,
+                                                      //   color: Colors.green,
+                                                      //   size:
+                                                      //       getadaptiveTextSize(
+                                                      //           context, 30),
+                                                      // ),
+                                                      )
+                                                  : Container(
+                                                      // color: Colors.amber,
+                                                      child: Icon(
+                                                        Icons.sync_problem,
+                                                        color: Colors.amber,
+                                                        size:
+                                                            getadaptiveTextSize(
+                                                                context, 30),
+                                                      ),
+                                                    ),
+
+                                              // Container(
+                                              //   child: Text(
+                                              //       '${transaction.status.toString()}'),
+                                              // ),
+
+                                              Container(
+
+                                                  // width: (width-(width/4)*3),
+                                                  width: width * 0.30,
+                                                  child: Column(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceEvenly,
+                                                    children: [
+                                                      if (transaction.method ==
+                                                          "CASH")
+                                                        Icon(
+                                                          Icons.money,
+                                                          size: width * 0.10,
+                                                        ),
+                                                      if (transaction.method !=
+                                                          "CASH")
+                                                        Icon(
+                                                          Icons.qr_code,
+                                                          // size: width * 0.10,
+                                                          size:
+                                                              getadaptiveTextSize(
+                                                                  context, 30),
+                                                        ),
+                                                      Text(
+                                                        '${transaction.method}',
+                                                        style: TextStyle(
+                                                            fontSize:
+                                                                getadaptiveTextSize(
+                                                                    context,
+                                                                    12)),
+                                                      )
+                                                    ],
+                                                  )),
+                                            ],
+                                          )),
                                     )),
-                              ],
-                            )),
-                      )),
-                ));
-              },
-            );
-          } else if (!snapshot.hasData) {
-            return Center(
-              child: Text("No Transactions"),
-            );
-          } else {
-            return Text('No transaction data'); // Handle empty data case
-          }
-        },
-      ),
-    );
+                              ));
+                            },
+                          );
+                        } else if (!snapshot.hasData) {
+                          return Center(
+                            child: Text("No Transactions"),
+                          );
+                        } else {
+                          return Text(
+                              'No transaction data'); // Handle empty data case
+                        }
+                      },
+                    ),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ));
   }
 }

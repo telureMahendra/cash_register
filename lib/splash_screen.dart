@@ -1,3 +1,4 @@
+import 'package:cash_register/homepage.dart';
 import 'package:cash_register/signup.dart';
 import 'package:flutter/material.dart';
 import 'package:animated_splash_screen/animated_splash_screen.dart';
@@ -5,7 +6,7 @@ import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'login.dart';
-import 'my_home_page.dart';
+import 'Calculator.dart';
 
 class splashScreen extends StatelessWidget {
   final bool loginStatus;
@@ -21,9 +22,7 @@ class splashScreen extends StatelessWidget {
 
       // nextScreen: const MyHomePage(title: 'Bill Calculator'),
       // nextScreen: const SignUp(),
-      nextScreen: loginStatus
-          ? const MyHomePage(title: 'Bill Calculator')
-          : const LoginScreen(),
+      nextScreen: loginStatus ? const Homepage() : const LoginScreen(),
       duration: 2500,
       splashIconSize: 300,
     );

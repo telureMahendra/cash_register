@@ -72,7 +72,10 @@ class _SettingsWidgetState extends State<SettingsWidget> {
   Future getImage(
     ImageSource img,
   ) async {
-    final pickedFile = await picker.pickImage(source: img);
+    final pickedFile = await picker.pickImage(
+      source: img,
+      imageQuality: 25,
+    );
     XFile? xfilePick = pickedFile;
     setState(
       () {

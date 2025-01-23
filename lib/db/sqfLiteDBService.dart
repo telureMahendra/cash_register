@@ -46,8 +46,9 @@ class DatabaseService {
 
   Future<void> updateTransactionSyncStatus(int id, bool isSynced) async {
     final db = await database;
-    await db!.update('bills', {'status': isSynced ? 1 : 0},
-        where: 'tid = ?', whereArgs: [id]);
+    // await db!.update('bills', {'status': isSynced ? 1 : 0},
+    //     where: 'tid = ?', whereArgs: [id]);
+    await db!.delete('bills', where: 'tid = ?', whereArgs: [id]);
   }
 
   Future<void> create(Database database, int version) async =>
@@ -56,10 +57,12 @@ class DatabaseService {
   Future<void> saveTransaction(String amount, String method, String time,
       String date, int userId, String dateTime, int flag) async {
     final db = await database;
+    createTable();
 
     final path = await getDatabasesPath();
     print('path for db is: $path');
     // db?.execute(
+    // db!.execute("DELETE FROM bills;");
     await db!.insert('bills', {
       "amount": amount,
       "method": method,
@@ -75,7 +78,6 @@ class DatabaseService {
   deleteData() async {
     final db = await database;
     db!.execute("DELETE FROM bills;");
-    print("data is deleted");
   }
 
   createTable() async {
@@ -92,12 +94,12 @@ class DatabaseService {
     "status" INTEGER,
     PRIMARY KEY("TID" AUTOINCREMENT)
     ); """);
-    print("data is deleted");
   }
 
   Future<List<Map<String, Object?>>> getDBdata() async {
     final db = await database;
     await _initDB();
+    createTable();
 
     List<Map<String, Object?>> list =
         await db!.rawQuery('SELECT * FROM bills ORDER BY date(tdatetime) ASC ');

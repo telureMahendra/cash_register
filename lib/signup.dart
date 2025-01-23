@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:cash_register/helper/helper.dart';
 import 'package:cash_register/login.dart';
-import 'package:cash_register/my_home_page.dart';
+import 'package:cash_register/Calculator.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';

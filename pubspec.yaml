@@ -1,5 +1,5 @@
 name: cash_register
-description: "A new Flutter project."
+description: "Make it easy Billing"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -41,16 +41,22 @@ dependencies:
   flutter_timer_countdown: ^1.0.7
   carousel_slider: ^5.0.0
   image_picker: ^1.1.2
-  connectivity_plus:
-
-
+  connectivity_plus: ^6.1.2
+  internet_connection_checker: ^3.0.1
+  workmanager:
+  flutter_launcher_icons:
+  curved_navigation_bar: ^1.0.6
+  animations: ^2.0.11
   math_expressions: ^2.6.0
   intl: 
-
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   permission_handler: ^11.3.1
+  custom_image_crop: ^0.1.1
+
+flutter_icons:
+  image_path: "assets/images/logo.png"
+  android: true 
+  ios: true 
 
 dev_dependencies:
   flutter_test:

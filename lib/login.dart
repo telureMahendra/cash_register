@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:cash_register/helper/helper.dart';
-import 'package:cash_register/my_home_page.dart';
+import 'package:cash_register/Calculator.dart';
+import 'package:cash_register/homepage.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -111,12 +112,8 @@ class _SignupScreenState extends State<LoginScreen> {
 
           saveLoginStatus(true);
 
-          Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const MyHomePage(
-                        title: 'Bill Register',
-                      )));
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (context) => const Homepage()));
         } else {
           // If the server did not return a 202 CREATED response,
           // then throw an exception.

@@ -98,24 +98,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() {});
   }
 
-  // Future<File> saveFilePermanently(String imagePath) async {
-  // SharedPreferences prefs = await SharedPreferences.getInstance();
-  // final directory = await getApplicationDocumentsDirectory();
-  // final name = basename(imagePath);
-  // final image = File("${directory.path}/$name");
-  // setState(() {
-  //   prefs.setString("profilImage", image.path);
-  // });
-  //   return File(imagePath).copy(image.path);
-  // }
-
-  // loadImage() async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   setState(() {
-  //     myImagePath = prefs.getString("profilImage");
-  //   });
-  // }
-
   @override
   initState() {
     super.initState();
@@ -158,6 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: TextStyle(color: Colors.white, fontFamily: 'Becham'),
         ),
         backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
       ),
       body: Center(
           child: Container(
@@ -469,7 +452,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 ElevatedButton(
                                     onPressed: () {
-                                      Navigator.pushReplacement(
+                                      Navigator.push(
                                           context,
                                           MaterialPageRoute(
                                               builder: (context) =>
