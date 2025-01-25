@@ -133,7 +133,7 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
           'userId': '${prefs.getInt('userId')}',
           'itemCount': "88",
           'pageNumber': "0",
-          "date": "Jan 18, 2025"
+          "date": "Jan 24, 2025"
         },
       );
 

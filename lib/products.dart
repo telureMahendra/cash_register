@@ -11,6 +11,7 @@ import 'package:lottie/lottie.dart';
 import 'package:http/http.dart' as http;
 import 'package:math_expressions/math_expressions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:add_to_cart_animation/add_to_cart_animation.dart';
 
 class ProductsList extends StatefulWidget {
   const ProductsList({super.key});
@@ -24,6 +25,12 @@ class _ProductsListState extends State<ProductsList> {
 
   final TextEditingController searchController = TextEditingController();
 
+  final GlobalKey widgetKey = GlobalKey();
+  GlobalKey<CartIconKey> cartKey = GlobalKey<CartIconKey>();
+  late Function(GlobalKey) runAddToCartAnimation;
+  late Function(GlobalKey) onClick;
+  var _cartQuantityItems = 0;
+
   List<ProductDetails> _productList = [];
   List<ProductDetails> _productListSearched = [];
 
@@ -34,6 +41,12 @@ class _ProductsListState extends State<ProductsList> {
   var channel = MethodChannel("printMethod");
 
   Parser p = Parser();
+
+  void productClick(GlobalKey widgetKey) async {
+    await runAddToCartAnimation(widgetKey);
+    await cartKey.currentState!
+        .runCartAnimation((++_cartQuantityItems).toString());
+  }
 
   String calculate(amount) {
     Expression exp = p.parse(amount);
@@ -105,6 +118,11 @@ class _ProductsListState extends State<ProductsList> {
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'userId': '${prefs.getInt('userId')}'
+        },
+      ).timeout(
+        const Duration(seconds: 2),
+        onTimeout: () {
+          return http.Response('Error', 408);
         },
       );
 
@@ -254,381 +272,454 @@ class _ProductsListState extends State<ProductsList> {
     size = MediaQuery.of(context).size;
     width = size.width;
     height = size.height;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Checkout',
-          style: TextStyle(color: Colors.white, fontFamily: 'Becham'),
-        ),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.add_shopping_cart,
-              color: Colors.white,
-            ),
-            tooltip: 'Add Product',
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(
-                builder: (context) {
-                  return Addproduct();
-                },
-              ));
-            },
+    return AddToCartAnimation(
+      dragAnimation: DragToCartAnimationOptions(rotation: true),
+      createAddToCartAnimation: (cartAnimation) {
+        this.runAddToCartAnimation = cartAnimation;
+      },
+      cartKey: cartKey,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(
+            'Checkout',
+            style: TextStyle(color: Colors.white, fontFamily: 'Becham'),
           ),
-        ],
-      ),
-      // floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
-      floatingActionButton: Padding(
-        padding: EdgeInsets.only(bottom: height * 0.065),
-        child: Container(
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(50)),
-          height: 80,
-          width: 80,
-          child: FloatingActionButton(
-            isExtended: true,
-            backgroundColor: Colors.blueAccent,
-            onPressed: () {
-              if (_cartProducts.isEmpty) {
-                nonSelectWarning();
-              } else {
-                printReciept();
-              }
-            },
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Stack(children: [
-                    Icon(
-                      Icons.shopping_cart,
-                      size: getadaptiveTextSize(context, 50),
-                      color: Colors.white,
+          backgroundColor: Colors.blue,
+          foregroundColor: Colors.white,
+          actions: [
+            IconButton(
+              icon: const Icon(
+                Icons.add_shopping_cart,
+                color: Colors.white,
+              ),
+              tooltip: 'Add Product',
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(
+                  builder: (context) {
+                    return Addproduct();
+                  },
+                ));
+              },
+            ),
+          ],
+        ),
+        // floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
+        floatingActionButton: Padding(
+            padding: EdgeInsets.only(
+              bottom: height * 0.065,
+            ),
+            child: _cartProducts.isNotEmpty
+                ? Container(
+                    decoration:
+                        BoxDecoration(borderRadius: BorderRadius.circular(50)),
+                    height: 90,
+                    width: 90,
+                    child: FloatingActionButton(
+                      isExtended: true,
+                      backgroundColor: Colors.blueAccent,
+                      onPressed: () {
+                        if (_cartProducts.isEmpty) {
+                          nonSelectWarning();
+                        } else {
+                          printReciept();
+                        }
+                      },
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Stack(children: [
+                              // Icon(
+                              //   Icons.shopping_cart,
+                              //   size: getadaptiveTextSize(context, 50),
+                              //   color: Colors.white,
+                              // ),
+                              Center(
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.only(right: 15, top: 10),
+                                  child: AddToCartIcon(
+                                    key: cartKey,
+                                    // leading: ,
+
+                                    icon: Icon(
+                                      Icons.shopping_cart,
+                                      size: getadaptiveTextSize(context, 50),
+                                      color: Colors.white,
+                                    ),
+                                    badgeOptions: BadgeOptions(
+                                      height: 30,
+                                      width: 30,
+                                      active: false,
+                                      backgroundColor: Colors.red,
+                                      fontSize:
+                                          getadaptiveTextSize(context, 15),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: EdgeInsets.only(bottom: 20),
+                                height: 90,
+                                width: 90,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      '${_cartProducts.length}',
+                                      style: TextStyle(
+                                          fontSize:
+                                              getadaptiveTextSize(context, 20),
+                                          color: Colors.red,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ]),
+                          ],
+                        ),
+                      ),
                     ),
-                    Container(
-                      padding: EdgeInsets.only(bottom: 20),
-                      height: 70,
-                      width: 70,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                  )
+                : Container()),
+        body: Center(
+            child: Container(
+          height: height * 0.90,
+          child: Column(children: [
+            Card(
+              elevation: 5,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Container(
+                  // height: height * 0.05,
+                  width: width * 0.90,
+                  // padding: EdgeInsets.only(right: 20),
+                  child: Column(
+                    // mainAxisAlignment: MainAxisAlignment.start,
+                    // crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            '${_cartProducts.length}',
-                            style: TextStyle(
-                                fontSize: getadaptiveTextSize(context, 20),
-                                color: Colors.red,
-                                fontWeight: FontWeight.bold),
+                          Container(
+                            width: width * 0.90,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  vertical: 10, horizontal: 20),
+                              child: TextFormField(
+                                // onChanged: searchData(),
+                                onChanged: (text) {
+                                  searchProduct(text);
+                                  setState(() {});
+                                },
+                                style: const TextStyle(fontSize: 20),
+                                controller: searchController,
+                                decoration: InputDecoration(
+                                  prefixIcon:
+                                      Icon(Icons.search, color: Colors.black54),
+                                  hintText: 'Search Product',
+                                  hintStyle: const TextStyle(
+                                      color: Colors.black45, fontSize: 18),
+                                  enabledBorder: OutlineInputBorder(
+                                    borderSide: BorderSide.none,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  border: InputBorder.none,
+                                  focusedBorder: OutlineInputBorder(
+                                    borderSide: const BorderSide(
+                                        color: Colors.blue, width: 2),
+                                    borderRadius: BorderRadius.circular(15),
+                                  ),
+                                  filled: true,
+                                  fillColor: const Color(0xFFedf0f8),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    vertical: 15,
+                                    horizontal: 20,
+                                  ),
+                                ),
+                                keyboardType: TextInputType.text,
+                                autovalidateMode:
+                                    AutovalidateMode.onUserInteraction,
+                                validator: (value) {
+                                  // setState(() {});
+                                  return null;
+                                },
+                              ),
+                            ),
+                            // Text(
+                            //   'Total Amount ',
+                            //   style: TextStyle(
+                            //     fontWeight: FontWeight.bold,
+                            //     fontSize: getadaptiveTextSize(context, 18),
+                            //   ),
+                            // ),
                           ),
                         ],
                       ),
-                    ),
-                  ]),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-      body: Center(
-          child: Container(
-        height: height * 0.90,
-        child: Column(children: [
-          Card(
-            elevation: 5,
-            child: Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Container(
-                // height: height * 0.05,
-                width: width * 0.90,
-                // padding: EdgeInsets.only(right: 20),
-                child: Column(
-                  // mainAxisAlignment: MainAxisAlignment.start,
-                  // crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          width: width * 0.90,
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 20),
-                            child: TextFormField(
-                              // onChanged: searchData(),
-                              onChanged: (text) {
-                                searchProduct(text);
-                                setState(() {});
-                              },
-                              style: const TextStyle(fontSize: 20),
-                              controller: searchController,
-                              decoration: InputDecoration(
-                                prefixIcon:
-                                    Icon(Icons.search, color: Colors.black54),
-                                hintText: 'Search Product',
-                                hintStyle: const TextStyle(
-                                    color: Colors.black45, fontSize: 18),
-                                enabledBorder: OutlineInputBorder(
-                                  borderSide: BorderSide.none,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                border: InputBorder.none,
-                                focusedBorder: OutlineInputBorder(
-                                  borderSide: const BorderSide(
-                                      color: Colors.blue, width: 2),
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                                filled: true,
-                                fillColor: const Color(0xFFedf0f8),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 15,
-                                  horizontal: 20,
-                                ),
-                              ),
-                              keyboardType: TextInputType.text,
-                              autovalidateMode:
-                                  AutovalidateMode.onUserInteraction,
-                              validator: (value) {
-                                // setState(() {});
-                                return null;
-                              },
-                            ),
-                          ),
-                          // Text(
-                          //   'Total Amount ',
-                          //   style: TextStyle(
-                          //     fontWeight: FontWeight.bold,
-                          //     fontSize: getadaptiveTextSize(context, 18),
-                          //   ),
-                          // ),
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-          Container(
-            child: Expanded(
-              child: _isLoading
-                  ? Center(child: Lottie.asset('assets/animations/loader.json'))
-                  : RefreshIndicator(
-                      onRefresh: () => _fetchProducts(),
-                      // strokeWidth: 10,
+            Container(
+              child: Expanded(
+                child: _isLoading
+                    ? Center(
+                        child: Lottie.asset('assets/animations/loader.json'))
+                    : RefreshIndicator(
+                        onRefresh: () => _fetchProducts(),
+                        // strokeWidth: 10,
 
-                      backgroundColor: Colors.white,
+                        backgroundColor: Colors.white,
 
-                      // onRefresh: () {
-                      //   setState(() {
-                      //     _productList;
-                      //   });
-                      // },
-                      child: _productListSearched.isEmpty
-                          ? RefreshIndicator(
-                              onRefresh: () => _fetchProducts(),
-                              child: Text("NO products Found!"))
-                          : GridView.builder(
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 3,
-                                // mainAxisExtent: ,
-                                // mainAxisExtent: height * 0.18,
-                                crossAxisSpacing: 10,
-                                mainAxisSpacing: 0.1,
-                              ),
-                              itemCount: _productListSearched.length,
-                              itemBuilder: (context, index) {
-                                return Padding(
-                                  padding: const EdgeInsets.all(10),
-                                  child: InkWell(
-                                    onLongPress: () {
-                                      _productListSearched[index].countNumber =
-                                          0;
+                        // onRefresh: () {
+                        //   setState(() {
+                        //     _productList;
+                        //   });
+                        // },
+                        child: _productListSearched.isEmpty
+                            ? RefreshIndicator(
+                                onRefresh: () => _fetchProducts(),
+                                child: Text("NO products Found!"))
+                            : GridView.builder(
+                                gridDelegate:
+                                    SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 3,
+                                  // mainAxisExtent: ,
+                                  // mainAxisExtent: height * 0.18,
+                                  crossAxisSpacing: 10,
+                                  mainAxisSpacing: 0.1,
+                                ),
+                                itemCount: _productListSearched.length,
+                                itemBuilder: (context, index) {
+                                  return TextButton(
+                                    onPressed: () {},
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(10),
+                                      child: InkWell(
+                                        // key: widgetKey,
+                                        onLongPress: () {
+                                          _productListSearched[index]
+                                              .countNumber = 0;
 
-                                      _productListSearched[index].isSelected =
-                                          false;
+                                          _productListSearched[index]
+                                              .isSelected = false;
 
-                                      removeProductFromCart(
-                                          _productListSearched[index].id);
+                                          removeProductFromCart(
+                                              _productListSearched[index].id);
 
-                                      setState(() {});
-                                    },
-                                    onTap: () {
-                                      _productListSearched[index].countNumber++;
+                                          setState(() {});
+                                        },
+                                        onTap: () {
+                                          _productListSearched[index]
+                                              .countNumber++;
 
-                                      _productListSearched[index].isSelected =
-                                          true;
+                                          _productListSearched[index]
+                                              .isSelected = true;
 
-                                      // _cartProducts.add(CartProduct(
-                                      //   id: _productListSearched[index].id,
-                                      //   productName: _productListSearched[index]
-                                      //       .productName,
-                                      //   countNumber: _productListSearched[index]
-                                      //       .countNumber,
-                                      //   price:
-                                      //       _productListSearched[index].price,
-                                      // ));
+                                          // _cartProducts.add(CartProduct(
+                                          //   id: _productListSearched[index].id,
+                                          //   productName: _productListSearched[index]
+                                          //       .productName,
+                                          //   countNumber: _productListSearched[index]
+                                          //       .countNumber,
+                                          //   price:
+                                          //       _productListSearched[index].price,
+                                          // ));
 
-                                      addProductInCart(
-                                          _productListSearched[index]);
+                                          addProductInCart(
+                                              _productListSearched[index]);
 
-                                      // print(_cartProducts[1].toString());
+                                          // print(_cartProducts[1].toString());
+                                          // productClick(GlobalKey());
 
-                                      setState(() {});
-                                    },
-                                    child: Container(
-                                      // height: height * 0.50,
+                                          setState(() {});
+                                        },
+                                        child: Container(
+                                          // height: height * 0.50,
 
-                                      decoration: BoxDecoration(
-                                          color: const Color.fromARGB(
-                                              255, 255, 255, 255),
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                          border: Border.all(width: 1)),
-                                      child: Center(
-                                        child: Stack(
-                                          children: [
-                                            Container(
-                                              child: Center(
-                                                  // child: Image.memory(
-                                                  //   Base64Decoder().convert(
-                                                  //       _productList[index].image),
-                                                  //   fit: BoxFit.fill,
-                                                  // ),
-                                                  child: ClipRRect(
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                        10), // Image border
-                                                child: SizedBox.fromSize(
-                                                  child: Image.memory(
-                                                    Base64Decoder().convert(
-                                                        _productListSearched[
-                                                                index]
-                                                            .image),
-                                                    fit: BoxFit.fill,
-                                                  ),
-                                                ),
-                                              )),
-                                            ),
-                                            Container(
-                                              width: double.infinity,
-                                              // color: Colors.transparent,
-                                              child: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.end,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.center,
-                                                children: [
-                                                  Container(
-                                                    decoration: BoxDecoration(
-                                                      color:
-                                                          const Color.fromARGB(
-                                                                  255,
-                                                                  216,
-                                                                  215,
-                                                                  215)
-                                                              .withOpacity(0.7),
-                                                      // color: containerColor,
-                                                      borderRadius:
-                                                          BorderRadius.only(
-                                                              bottomLeft: Radius
-                                                                  .circular(10),
-                                                              bottomRight:
-                                                                  Radius
-                                                                      .circular(
-                                                                          10)),
-                                                    ),
-                                                    child: Column(
-                                                      children: [
-                                                        Container(
-                                                          width:
-                                                              double.infinity,
-                                                          child: Center(
-                                                            child: Text(
-                                                              _productListSearched[
-                                                                      index]
-                                                                  .productName,
-                                                              textAlign:
-                                                                  TextAlign
-                                                                      .center,
-                                                              style: TextStyle(
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                  color: Colors
-                                                                      .black,
-                                                                  fontSize:
-                                                                      getadaptiveTextSize(
-                                                                          context,
-                                                                          10)),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        Container(
-                                                          width:
-                                                              double.infinity,
-                                                          child: Center(
-                                                            child: Text(
-                                                              inrFormat.format(
-                                                                  double.parse(
-                                                                      _productListSearched[
-                                                                              index]
-                                                                          .price)),
-                                                              // _productList[index].price,
-                                                              textAlign:
-                                                                  TextAlign
-                                                                      .center,
-                                                              style: TextStyle(
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold,
-                                                                color: Colors
-                                                                    .black,
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            _productListSearched[index]
-                                                        .isSelected ==
-                                                    false
-                                                ? Container()
-                                                : Container(
-                                                    color: const Color.fromARGB(
-                                                            255, 216, 215, 215)
-                                                        .withOpacity(0.7),
-                                                    child: Center(
-                                                      child: Text(
-                                                        '${_productListSearched[index].countNumber}',
-                                                        style: TextStyle(
-                                                            fontSize:
-                                                                getadaptiveTextSize(
-                                                                    context,
-                                                                    25)),
+                                          decoration: BoxDecoration(
+                                              color: const Color.fromARGB(
+                                                  255, 255, 255, 255),
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                              border: Border.all(width: 1)),
+                                          child: Center(
+                                            child: Stack(
+                                              children: [
+                                                Container(
+                                                  child: Center(
+                                                      // child: Image.memory(
+                                                      //   Base64Decoder().convert(
+                                                      //       _productList[index].image),
+                                                      //   fit: BoxFit.fill,
+                                                      // ),
+                                                      child: ClipRRect(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            10), // Image border
+                                                    child: SizedBox.fromSize(
+                                                      child: Image.memory(
+                                                        Base64Decoder().convert(
+                                                            _productListSearched[
+                                                                    index]
+                                                                .image),
+                                                        fit: BoxFit.fill,
                                                       ),
                                                     ),
-                                                  )
-                                          ],
+                                                  )),
+                                                ),
+                                                Container(
+                                                  width: double.infinity,
+                                                  // color: Colors.transparent,
+                                                  child: Column(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment.end,
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: const Color
+                                                                  .fromARGB(255,
+                                                                  216, 215, 215)
+                                                              .withOpacity(0.7),
+                                                          // color: containerColor,
+                                                          borderRadius:
+                                                              BorderRadius.only(
+                                                                  bottomLeft: Radius
+                                                                      .circular(
+                                                                          10),
+                                                                  bottomRight: Radius
+                                                                      .circular(
+                                                                          10)),
+                                                        ),
+                                                        child: Column(
+                                                          children: [
+                                                            Container(
+                                                              width: double
+                                                                  .infinity,
+                                                              child: Center(
+                                                                child: Text(
+                                                                  _productListSearched[
+                                                                          index]
+                                                                      .productName,
+                                                                  textAlign:
+                                                                      TextAlign
+                                                                          .center,
+                                                                  style: TextStyle(
+                                                                      fontWeight:
+                                                                          FontWeight
+                                                                              .bold,
+                                                                      color: Colors
+                                                                          .black,
+                                                                      fontSize: getadaptiveTextSize(
+                                                                          context,
+                                                                          10)),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                            Container(
+                                                              width: double
+                                                                  .infinity,
+                                                              child: Center(
+                                                                child: Text(
+                                                                  inrFormat.format(
+                                                                      double.parse(
+                                                                          _productListSearched[index]
+                                                                              .price)),
+                                                                  // _productList[index].price,
+                                                                  textAlign:
+                                                                      TextAlign
+                                                                          .center,
+                                                                  style:
+                                                                      TextStyle(
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    color: Colors
+                                                                        .black,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                _productListSearched[index]
+                                                            .isSelected ==
+                                                        false
+                                                    ? Container()
+                                                    : Container(
+                                                        color: const Color
+                                                                .fromARGB(255,
+                                                                216, 215, 215)
+                                                            .withOpacity(0.7),
+                                                        child: Center(
+                                                          child: Text(
+                                                            '${_productListSearched[index].countNumber}',
+                                                            style: TextStyle(
+                                                                fontSize:
+                                                                    getadaptiveTextSize(
+                                                                        context,
+                                                                        25)),
+                                                          ),
+                                                        ),
+                                                      )
+                                              ],
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                );
-                              },
-                            ),
-                    ),
+                                  );
+                                },
+                              ),
+                      ),
+              ),
             ),
-          ),
-        ]),
-      )),
+          ]),
+        )),
+      ),
+    );
+  }
+}
+
+class AppListItem extends StatelessWidget {
+  final GlobalKey widgetKey = GlobalKey();
+  final int index;
+  final void Function(GlobalKey) onClick;
+
+  AppListItem({super.key, required this.onClick, required this.index});
+  @override
+  Widget build(BuildContext context) {
+    //  Container is mandatory. It can hold images or whatever you want
+    Container mandatoryContainer = Container(
+      key: widgetKey,
+      width: 60,
+      height: 60,
+      color: Colors.transparent,
+      child: Image.network(
+        "https://cdn.jsdelivr.net/gh/omerbyrk/add_to_cart_animation/example/assets/apple.png",
+        width: 60,
+        height: 60,
+      ),
+    );
+
+    return ListTile(
+      onTap: () => onClick(widgetKey),
+      leading: mandatoryContainer,
+      title: Text(
+        "Animated Apple Product Image $index",
+      ),
     );
   }
 }

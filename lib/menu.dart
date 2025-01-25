@@ -1,3 +1,4 @@
+import 'package:cash_register/helper/ConnectPrinter.dart';
 import 'package:cash_register/login.dart';
 
 import 'package:cash_register/profile.dart';
@@ -209,11 +210,24 @@ class _MenuWidgetState extends State<MenuWidget> {
                                                         color: Colors.black))
                                               ],
                                             ),
-                                            onPressed: () async {},
+                                            onPressed: () async {
+                                              Navigator.push(context,
+                                                  MaterialPageRoute(
+                                                builder: (context) {
+                                                  return Connectprinter();
+                                                },
+                                              ));
+                                            },
                                           )
                                         ],
                                       ))),
-                              onTap: () {}),
+                              onTap: () {
+                                Navigator.push(context, MaterialPageRoute(
+                                  builder: (context) {
+                                    return Connectprinter();
+                                  },
+                                ));
+                              }),
                         ),
                         Card(
                           elevation: 5,
