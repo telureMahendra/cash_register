@@ -54,15 +54,25 @@ class DatabaseService {
   Future<void> create(Database database, int version) async =>
       await BillDB().createTable(database);
 
-  Future<void> saveTransaction(String amount, String method, String time,
-      String date, int userId, String dateTime, int flag) async {
+  Future<void> saveTransaction(
+      String amount,
+      String method,
+      String time,
+      String date,
+      int userId,
+      String dateTime,
+      int flag,
+      String tran_source) async {
     final db = await database;
     createTable();
 
     final path = await getDatabasesPath();
     print('path for db is: $path');
     // db?.execute(
-    // db!.execute("DELETE FROM bills;");
+    // db!.execute("DROP TABLE bills;");
+    // deleteData()
+    // createTable();
+
     await db!.insert('bills', {
       "amount": amount,
       "method": method,
@@ -70,9 +80,15 @@ class DatabaseService {
       "date": date,
       "userId": userId,
       "tdatetime": dateTime,
-      "status": flag
+      "status": flag,
+      "tranSource": tran_source,
     });
     print("data stored dbservice");
+  }
+
+  deletable() async {
+    final db = await database;
+    db!.execute("DROP TABLE bills;");
   }
 
   deleteData() async {
@@ -92,8 +108,10 @@ class DatabaseService {
     "created_at" DATETIME DEFAULT CURRENT_TIMESTAMP,
     "tdatetime" TEXT,
     "status" INTEGER,
+    "tranSource" TEXT,
     PRIMARY KEY("TID" AUTOINCREMENT)
     ); """);
+    print("Table created");
   }
 
   Future<List<Map<String, Object?>>> getDBdata() async {
@@ -103,6 +121,8 @@ class DatabaseService {
 
     List<Map<String, Object?>> list =
         await db!.rawQuery('SELECT * FROM bills ORDER BY date(tdatetime) ASC ');
+
+    print("data list ${list}");
     return list;
   }
 }

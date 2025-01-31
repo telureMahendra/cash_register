@@ -37,12 +37,12 @@ class TextFieldInput extends StatelessWidget {
           hintStyle: const TextStyle(color: Colors.black45, fontSize: 18),
           enabledBorder: OutlineInputBorder(
             borderSide: BorderSide.none,
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(10),
           ),
           border: InputBorder.none,
           focusedBorder: OutlineInputBorder(
             borderSide: const BorderSide(color: Colors.blue, width: 2),
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(10),
           ),
           filled: true,
           fillColor: const Color(0xFFedf0f8),

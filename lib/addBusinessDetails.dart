@@ -29,6 +29,8 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
   final TextEditingController mobileController = TextEditingController();
   final TextEditingController gstNumberController = TextEditingController();
   final TextEditingController upiIDController = TextEditingController();
+  final TextEditingController cinNumberController = TextEditingController();
+  final TextEditingController panNumberController = TextEditingController();
 
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
@@ -353,6 +355,8 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
         appBar: AppBar(
           title: Text("Business Details"),
           centerTitle: false,
+          backgroundColor: Colors.blue,
+          foregroundColor: Colors.white,
         ),
         backgroundColor: Colors.white,
         body: Container(
@@ -417,16 +421,21 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
                   //     ),
                   //   ),
                   // ),
-                  TextFieldInput(
-                    icon: Icons.percent,
-                    textEditingController: gstNumberController,
-                    hintText: 'GST Number(Optional)',
-                    textInputType: TextInputType.text,
-                    length: 30,
-                    validator: (value) {
-                      return null;
-                    },
-                  ),
+                  // TextFieldInput(
+                  //   icon: Icons.percent,
+                  //   textEditingController: gstNumberController,
+                  //   hintText: 'GST Number(Optional)',
+                  //   textInputType: TextInputType.text,
+                  //   length: 15,
+                  //   validator: (value) {
+                  //     // if (value != null || (value!.isNotEmpty)) {
+                  //     //   if (value!.length != 15) {
+                  //     //     return 'GST Number must be valid';
+                  //     //   }
+                  //     // }
+                  //     return null;
+                  //   },
+                  // ),
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         vertical: 10, horizontal: 20),
@@ -442,13 +451,13 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
                             color: Colors.black45, fontSize: 18),
                         enabledBorder: OutlineInputBorder(
                           borderSide: BorderSide.none,
-                          borderRadius: BorderRadius.circular(30),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         border: InputBorder.none,
                         focusedBorder: OutlineInputBorder(
                           borderSide:
                               const BorderSide(color: Colors.blue, width: 2),
-                          borderRadius: BorderRadius.circular(30),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         filled: true,
                         fillColor: const Color(0xFFedf0f8),
@@ -503,7 +512,7 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
                                 ),
                               ),
                               Container(
-                                width: width * 0.90,
+                                width: width * 0.85,
                                 child: Text(
                                   'Please note: Ensure you have entered a valid UPI ID. Incorrect UPI IDs may lead to payment issues, such as payments being received by someone else. We are not responsible for any issues arising from incorrect UPI ID entries.',
                                   style: TextStyle(
@@ -517,6 +526,36 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
                         ],
                       ),
                     ),
+                  ),
+                  TextFieldInput(
+                    icon: Icons.percent,
+                    textEditingController: gstNumberController,
+                    hintText: 'GST Number(Optional)',
+                    textInputType: TextInputType.text,
+                    length: 15,
+                    validator: (value) {
+                      return null;
+                    },
+                  ),
+                  TextFieldInput(
+                    icon: Icons.card_travel,
+                    textEditingController: cinNumberController,
+                    hintText: 'CIN Number(Optional)',
+                    textInputType: TextInputType.text,
+                    length: 21,
+                    validator: (value) {
+                      return null;
+                    },
+                  ),
+                  TextFieldInput(
+                    icon: Icons.card_membership,
+                    textEditingController: panNumberController,
+                    hintText: 'PAN Number(Optional)',
+                    textInputType: TextInputType.text,
+                    length: 10,
+                    validator: (value) {
+                      return null;
+                    },
                   ),
                   TextFieldInput(
                     icon: Icons.place_rounded,

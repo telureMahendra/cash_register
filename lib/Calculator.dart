@@ -4,28 +4,40 @@ import 'dart:io';
 
 import 'package:cash_register/addBusinessDetails.dart';
 import 'package:cash_register/api.dart';
+import 'package:cash_register/cartSummary.dart';
 import 'package:cash_register/db/sqfLiteDBService.dart';
 import 'package:cash_register/editBusinessDetails.dart';
 import 'package:cash_register/helper/helper.dart';
+import 'package:cash_register/helper/printHelper.dart';
 import 'package:cash_register/helper/service/TransactionSyncService.dart';
 import 'package:cash_register/menu.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:cash_register/transactions_history.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_esc_pos_utils/flutter_esc_pos_utils.dart';
 import 'package:flutter_timer_countdown/flutter_timer_countdown.dart';
 import 'package:lottie/lottie.dart';
 import 'package:math_expressions/math_expressions.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:print_bluetooth_thermal/post_code.dart';
+// import 'package:print_bluetooth_thermal/post_code.dart' as FontSize;
+// package:print_bluetooth_thermal/post_code.dart
+
+import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
+// import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import 'package:qr_bar_code/code/src/code_generate.dart';
 import 'package:qr_bar_code/code/src/code_type.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:widgets_to_image/widgets_to_image.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:workmanager/src/options.dart' as constraints;
 import 'package:flutter_styled_toast/flutter_styled_toast.dart';
 import 'package:http/http.dart' as http;
+import 'package:image/image.dart' as img;
 // import 'package:upi_payment_qrcode_generator/upi_payment_qrcode_generator.dart';
 // import 'package:fluttertoast/fluttertoast.dart';
 import 'package:qr_bar_code/qr_bar_code.dart';
@@ -46,6 +58,7 @@ class _CalculatorState extends State<Calculator> {
   // late final AnimationController _controller;
 
   final dbs = DatabaseService.instance;
+  late Printhelper printhelper = Printhelper();
 
   String total = '0.0';
   int tempNum = 0;
@@ -79,6 +92,7 @@ class _CalculatorState extends State<Calculator> {
   }
 
   var channel = MethodChannel("printMethod");
+
   printReciept() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -109,12 +123,390 @@ class _CalculatorState extends State<Calculator> {
     });
   }
 
+  String _info = "";
+  String _msj = '';
+
+  bool connected = false;
+  // List<BluetoothInfo> items = [];
+  // final List<String> _options = [
+  //   "permission bluetooth granted",
+  //   "bluetooth enabled",
+  //   "connection status",
+  //   "update info"
+  // ];
+
+  String _selectSize = "2";
+  final _txtText = TextEditingController(text: "Hello developer");
+  bool _progress = false;
+  String _msjprogress = "";
+  var conDeviceMac = '', conDeviceName = '';
+
+  String optionprinttype = "58 mm";
+  List<String> options = ["58 mm", "80 mm"];
+
+  String addSpace(spaceCount) {
+    var temp = "";
+    for (int i = 0; i < spaceCount; i++) {
+      temp += " ";
+    }
+    return temp;
+  }
+
+  // String getRupeeSymbolForPrinter() {
+  //   // Determine the character set supported by your printer
+  //   // and return the appropriate symbol.
+  //   // For example:
+  //   // If using CP437 and '§' is a suitable substitute:
+  //   if (printerCharacterSet == 'CP437') {
+  //     return '§';
+  //   } else {
+  //     // Handle other character sets or return an empty string if unsupported
+  //     return '';
+  //   }
+  // }
+
+  printThermalReciept(var payMethod, var recSource) async {
+    // checkPaired();
+
+    bool connectionStatus = await PrintBluetoothThermal.connectionStatus;
+
+    // bool result = await PrintBluetoothThermal.writeString(
+    // printText: PrintTextSize(size: int.parse("5"), text: "hello"));
+
+    String time = DateFormat('jms').format(DateTime.now()).toString();
+    String date = DateFormat('yMMMd').format(DateTime.now()).toString();
+
+    if (connectionStatus) {
+      print("Device Connected to printer ");
+
+      final prefs = await SharedPreferences.getInstance();
+      List<int> bytes = [];
+      // Using default profile
+      final profile = await CapabilityProfile.load();
+
+      bool isLogoPrint;
+      isLogoPrint = prefs.getBool('isLogoPrint') ?? false;
+
+      final generator = Generator(
+          optionprinttype == "58 mm" ? PaperSize.mm58 : PaperSize.mm80,
+          profile);
+      bytes += generator.setGlobalFont(PosFontType.fontA);
+      bytes += generator.reset();
+
+      if (isLogoPrint) {
+        final Uint8List bytesImg =
+            Base64Codec().decode(prefs.getString('image') ?? '');
+        img.Image? image = img.decodeImage(bytesImg);
+
+        final resizedImage = img.copyResize(image!,
+            width: image.width ~/ 1.3,
+            height: image.height ~/ 1.3,
+            interpolation: img.Interpolation.nearest);
+        final bytesimg = Uint8List.fromList(img.encodeJpg(resizedImage));
+        image = img.decodeImage(bytesimg);
+
+        bytes += generator.image(
+          image!,
+          align: PosAlign.center,
+        );
+
+        await PrintBluetoothThermal.writeBytes(bytes);
+      }
+      await PrintBluetoothThermal.writeString(
+        printText: PrintTextSize(
+          size: 3,
+          text: prefs.getString("businessName") ?? '',
+        ),
+      );
+      // await PrintBluetoothThermal.writeString(
+      //   printText: PrintTextSize(
+      //     size: 1,
+      //     text: ' ',
+      //   ),
+      // );
+      // await PrintBluetoothThermal.writeBytes(generator.feed(0));
+
+      await PrintBluetoothThermal.writeString(
+        printText: PrintTextSize(
+          size: 1,
+          text: '\n${prefs.getString("address") ?? ''}',
+        ),
+      );
+
+      await PrintBluetoothThermal.writeString(
+        printText: PrintTextSize(
+          size: 2,
+          text: '\nEmail: ${prefs.getString("businessEmail") ?? ''}',
+        ),
+      );
+
+      await PrintBluetoothThermal.writeString(
+        printText: PrintTextSize(
+          size: 2,
+          text: '\nMobile: ${prefs.getString("businessMobile") ?? ''}',
+        ),
+      );
+
+      bool isGstPrint = prefs.getBool('isPrintGST') ?? false;
+      if (isGstPrint) {
+        await PrintBluetoothThermal.writeString(
+          printText: PrintTextSize(
+            size: 2,
+            text: '\nGST: ${prefs.getString("gstNumber") ?? ''}',
+          ),
+        );
+      }
+
+      bytes = [];
+
+      // bytes +=
+      //     PostCode.text(text: "Size compressed", fontSize: FontSize.compressed);
+      // bytes += PostCode.text(text: "Size normal", fontSize: FontSize.normal);
+      // bytes += PostCode.text(text: "Bold", bold: true);
+      // bytes += PostCode.text(text: "Inverse", inverse: true);
+      // bytes += PostCode.text(text: "AlignPos right", align: AlignPos.right);
+      // bytes += PostCode.text(
+      //     text: "Size normal center",
+      //     bold: true,
+      //     fontSize: FontSize.normal,
+      //     align: AlignPos.center);
+
+      var invCalCounter = prefs.getInt("invCalCounter") ?? 1;
+      var invProdCounter = prefs.getInt("invProdCounter") ?? 1;
+
+      bytes += generator.feed(1);
+
+      if (recSource == "CALCULATOR") {
+        bytes += PostCode.text(
+          text:
+              "Inv No.: cal/${invCalCounter++}${addSpace(25 - payMethod.toString().length - invCalCounter.toString().length)}By: ${payMethod.toString()}",
+          fontSize: FontSize.compressed,
+          align: AlignPos.center,
+        );
+        prefs.setInt("invCalCounter", invCalCounter++);
+      } else {
+        bytes += PostCode.text(
+          text:
+              "Inv No.: Pro/${invProdCounter++}${addSpace(25 - payMethod.toString().length - invProdCounter.toString().length)}By: ${payMethod}",
+          fontSize: FontSize.compressed,
+          align: AlignPos.center,
+        );
+        prefs.setInt("invProdCounter", invProdCounter++);
+      }
+
+      bytes += PostCode.text(
+        text:
+            "Date: ${date}${addSpace(30 - date.length - time.length)}Time: ${time}",
+        fontSize: FontSize.compressed,
+        align: AlignPos.center,
+      );
+
+      bytes += PostCode.text(
+        text: "------------------------------------------",
+        fontSize: FontSize.compressed,
+        align: AlignPos.center,
+      );
+      bytes += PostCode.text(
+        text: "Product${addSpace(20)}Value",
+        align: AlignPos.center,
+        fontSize: FontSize.normal,
+      );
+      bytes += PostCode.text(
+        text: "------------------------------------------",
+        fontSize: FontSize.compressed,
+        align: AlignPos.center,
+      );
+
+      if (evalString[evalString.length - 1] == '+') {
+        evalString = evalString.substring(0, evalString.length - 1);
+      }
+
+      List<String> amounts = evalString.split("+");
+      int counter = 1;
+      // String rupeeSymbol = getRupeeSymbolForPrinter();
+      for (String a in amounts) {
+        a = inrFormat.format(double.parse(a.toString()));
+        bytes += PostCode.text(
+          text:
+              "Item $counter${addSpace(34 - a.length - counter.toString().length)}Rs. ${a.substring(1)}",
+          fontSize: FontSize.compressed,
+          align: AlignPos.center,
+          bold: false,
+        );
+        counter++;
+      }
+
+      bytes += PostCode.text(
+        text: "==========================================",
+        fontSize: FontSize.compressed,
+        align: AlignPos.center,
+      );
+      bytes += PostCode.text(
+        text:
+            "Total${addSpace(24 - total.length - 3)}Rs. ${inrFormat.format(double.parse(total)).substring(1)}",
+        fontSize: FontSize.normal,
+        bold: true,
+        align: AlignPos.center,
+      );
+      bytes += PostCode.text(
+        text: "==========================================",
+        fontSize: FontSize.compressed,
+        align: AlignPos.center,
+      );
+
+      // bytes += PostCode.text(
+      //     text:
+      //         "Bold\bcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      //     bold: true);
+      // bytes += PostCode.text(
+      //     text:
+      //         "Inverse\nddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      //     inverse: true);
+      // // bytes += PostCode.text(text: "AlignPos right", align: AlignPos.right);
+      // bytes += PostCode.text(
+      //     text:
+      //         "Double Height\neeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      //     fontSize: FontSize.doubleHeight);
+      // bytes += PostCode.text(
+      //     text:
+      //         "Double Width\nfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      //     fontSize: FontSize.doubleWidth);
+      // bytes += PostCode.text(
+      //     text:
+      //         "Size big\nggggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+      //     fontSize: FontSize.big);
+
+      bytes += PostCode.text(
+        text: "Thank You!",
+        fontSize: FontSize.doubleHeight,
+        align: AlignPos.center,
+      );
+      bytes += PostCode.text(
+        text: "Note: Goods once sold will not be taken back or exchanged.",
+        fontSize: FontSize.compressed,
+        align: AlignPos.center,
+      );
+      bytes += PostCode.text(
+        text: "Powerd by: Vizpay Business Solutions Pvt. Ltd.",
+        fontSize: FontSize.compressed,
+        align: AlignPos.center,
+      );
+
+      // bytes += PostCode.enter();
+
+      bytes += generator.feed(3);
+      //bytes += generator.cut();
+      await PrintBluetoothThermal.writeBytes(bytes);
+    }
+    print("Device not connected");
+  }
+
+  checkPaired() async {
+    final prefs = await SharedPreferences.getInstance();
+    var resultq = await PrintBluetoothThermal.disconnect;
+    String mac = prefs.getString("mac") ?? '';
+    print("Mac address is: ${mac}");
+    var devices = await PrintBluetoothThermal.pairedBluetooths;
+    for (BluetoothInfo b in devices) {
+      if (b.macAdress == mac) {
+        conDeviceMac = b.macAdress;
+        conDeviceName = b.name;
+      }
+    }
+    if (mac.isNotEmpty) {
+      connect(conDeviceMac, conDeviceName);
+    }
+  }
+
+  Future<void> connect(String mac, String name) async {
+    await PrintBluetoothThermal.disconnect;
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _progress = true;
+      _msjprogress = "Connecting...";
+      connected = false;
+    });
+
+    final bool result =
+        await PrintBluetoothThermal.connect(macPrinterAddress: mac);
+    prefs.setString("mac", mac);
+    conDeviceMac = mac;
+    conDeviceName = name;
+
+    print("state conected $result");
+    if (result) connected = true;
+    setState(() {
+      _progress = false;
+    });
+  }
+
+  Future<List<int>> testTicket() async {
+    List<int> bytes = [];
+    // Using default profile
+    final profile = await CapabilityProfile.load();
+    final generator = Generator(
+        optionprinttype == "58 mm" ? PaperSize.mm58 : PaperSize.mm80, profile);
+    bytes += generator.setGlobalFont(PosFontType.fontA);
+    bytes += generator.reset();
+
+    bytes += generator.text(
+      'Text size 50%',
+      styles: const PosStyles(
+        fontType: PosFontType.fontB,
+      ),
+    );
+    bytes += generator.text(
+      'Text size 100%',
+      styles: const PosStyles(
+        fontType: PosFontType.fontA,
+      ),
+    );
+    bytes += generator.text(
+      'Text size 200%',
+      styles: const PosStyles(
+        height: PosTextSize.size2,
+        width: PosTextSize.size2,
+      ),
+    );
+
+    bytes += generator.feed(2);
+    //bytes += generator.cut();
+    return bytes;
+  }
+
+  Future<void> initPlatformState() async {
+    String platformVersion;
+    int porcentbatery = 0;
+    // Platform messages may fail, so we use a try/catch PlatformException.
+    try {
+      platformVersion = await PrintBluetoothThermal.platformVersion;
+      print("patformversion: $platformVersion");
+      porcentbatery = await PrintBluetoothThermal.batteryLevel;
+    } on PlatformException {
+      platformVersion = 'Failed to get platform version.';
+    }
+
+    // If the widget was removed from the tree while the asynchronous platform
+    // message was in flight, we want to discard the reply rather than calling
+    // setState to update our non-existent appearance.
+    if (!mounted) return;
+
+    final bool result = await PrintBluetoothThermal.bluetoothEnabled;
+    print("bluetooth enabled: $result");
+    if (result) {
+      _msj = "Bluetooth enabled, please search and connect";
+    } else {
+      _msj = "Bluetooth not enabled";
+    }
+
+    setState(() {
+      _info = "$platformVersion ($porcentbatery% battery)";
+    });
+  }
+
   Future<bool> isNetworkAvailable() async {
     var connectivityResult = await (Connectivity().checkConnectivity());
     return connectivityResult != ConnectivityResult.none;
-    // bool isNetworkConnected = false;
-
-    // return isNetworkConnected;
   }
 
   void callbackDispatcher() {
@@ -292,9 +684,11 @@ class _CalculatorState extends State<Calculator> {
     });
 
     internetConnection();
+    initPlatformState();
 
     checkLoggedIn();
     checkBusinessDetailsFound();
+    checkPaired();
 
     setState(() {});
   }
@@ -309,7 +703,9 @@ class _CalculatorState extends State<Calculator> {
     return (value / 710) * MediaQuery.of(context).size.height;
   }
 
-  Future<void> payBill(String method) async {
+  Future<void> payBill(
+    String method,
+  ) async {
     final prefs = await SharedPreferences.getInstance();
     upiID = prefs.getString("upiID") ?? '';
 
@@ -367,7 +763,8 @@ class _CalculatorState extends State<Calculator> {
         );
       } else {
         if (method == 'CASH') {
-          saveTransactionSqlite(method);
+          saveTransactionSqlite(method, total, printhelper.sourceCalculator);
+          // printWidgetToReciept();
         } else {
           // internetConnection();
           if (isDeviceConnected) {
@@ -572,7 +969,9 @@ class _CalculatorState extends State<Calculator> {
                                                                         Navigator.of(context)
                                                                             .pop();
                                                                         saveTransactionToServer(
-                                                                            method);
+                                                                            method,
+                                                                            total,
+                                                                            printhelper.sourceCalculator);
                                                                       },
                                                                       child:
                                                                           Text(
@@ -680,7 +1079,8 @@ class _CalculatorState extends State<Calculator> {
                                 onPressed: () {
                                   Navigator.pop(context);
 
-                                  saveTransactionToServer(method);
+                                  saveTransactionToServer(method, total,
+                                      printhelper.sourceCalculator);
                                 },
                               ),
                             ),
@@ -871,7 +1271,7 @@ class _CalculatorState extends State<Calculator> {
   // print(dbs.getDBdata());
   // }
 
-  saveTransactionSqlite(String method) async {
+  saveTransactionSqlite(String method, String amount, String tranSource) async {
     String time = DateFormat('jms').format(DateTime.now()).toString();
     String date = DateFormat('yMMMd').format(DateTime.now()).toString();
     String amount = inrFormat.format(double.parse(total)).toString();
@@ -881,9 +1281,12 @@ class _CalculatorState extends State<Calculator> {
 
     int userId = prefs.getInt("userId")!;
 
-    dbs.saveTransaction(amount, method, time, date, userId, dateTime, 0);
+    var tran_source = "CALCULATOR";
+
+    dbs.saveTransaction(
+        amount, method, time, date, userId, dateTime, 0, tran_source);
     print("Date stored");
-    successful();
+    successful(method);
 
     // try {
     //   showDialog(
@@ -903,7 +1306,8 @@ class _CalculatorState extends State<Calculator> {
   }
 
 // Future<http.Response>
-  void saveTransactionToServer(String method) async {
+  void saveTransactionToServer(
+      String method, String amount, String tranSource) async {
     String time = DateFormat('jms').format(DateTime.now()).toString();
     String date = DateFormat('yMMMd').format(DateTime.now()).toString();
     String amount = inrFormat.format(double.parse(total)).toString();
@@ -946,6 +1350,7 @@ class _CalculatorState extends State<Calculator> {
           'amount': amount,
           'userId': '${prefs.getInt('userId')}',
           "dateTime": dateTime,
+          'tranSource': tranSource,
           'user': {
             'userId': '${prefs.getInt('userId')}',
           }
@@ -956,7 +1361,7 @@ class _CalculatorState extends State<Calculator> {
       if (response.statusCode == 200) {
         // If the server did return a 201 CREATED response,
         // then parse the JSON.
-        successful();
+        successful(method);
       } else {
         // If the server did not return a 201 CREATED response,
         // then throw an exception.
@@ -1097,12 +1502,15 @@ class _CalculatorState extends State<Calculator> {
   //   successful();
   // }
 
-  successful() async {
+  successful(var method) async {
     final prefs = await SharedPreferences.getInstance();
     var recieptSwitch = prefs.getBool("recieptSwitch") ?? false;
 
     if (recieptSwitch) {
-      printReciept();
+      // printReciept();
+      // printThermalReciept(method, printhelper.sourceCalculator);
+      printhelper.printThermalReciept(
+          method, printhelper.sourceCalculator, evalString);
     }
 
     syncTransaction();
@@ -1890,10 +2298,10 @@ class _CalculatorState extends State<Calculator> {
                 Center(
                   child: Container(
                     // terminal p3000
-                    height: height * 0.580,
+                    // height: height * 0.580,
 
                     // realme 5 pro
-                    // height: height * 0.50,
+                    height: height * 0.52,
                     width: width * 0.95,
                     // color: Colors.amber,
                     padding: EdgeInsets.only(
@@ -1921,12 +2329,6 @@ class _CalculatorState extends State<Calculator> {
                                       height: btnHeight,
                                       width: btnWidth,
                                       child: ElevatedButton(
-                                        child: Text(
-                                          "1",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
-                                        ),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: Color.fromARGB(
                                               255, 236, 233, 232), // background
@@ -1942,6 +2344,12 @@ class _CalculatorState extends State<Calculator> {
                                         onPressed: () {
                                           addition('1');
                                         },
+                                        child: Text(
+                                          "1",
+                                          style: TextStyle(
+                                              fontSize: getadaptiveTextSize(
+                                                  context, 40)),
+                                        ),
                                       ),
                                     ),
 

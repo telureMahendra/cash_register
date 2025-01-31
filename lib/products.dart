@@ -2,8 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:cash_register/addProduct.dart';
+import 'package:cash_register/cartSummary.dart';
 import 'package:cash_register/helper/helper.dart';
 import 'package:cash_register/helper/product.dart';
+import 'package:cash_register/product_master.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -17,10 +19,10 @@ class ProductsList extends StatefulWidget {
   const ProductsList({super.key});
 
   @override
-  State<ProductsList> createState() => _ProductsListState();
+  State<ProductsList> createState() => ProductsListState();
 }
 
-class _ProductsListState extends State<ProductsList> {
+class ProductsListState extends State<ProductsList> {
   var size, width, height;
 
   final TextEditingController searchController = TextEditingController();
@@ -34,7 +36,7 @@ class _ProductsListState extends State<ProductsList> {
   List<ProductDetails> _productList = [];
   List<ProductDetails> _productListSearched = [];
 
-  List<CartProduct> _cartProducts = [];
+  List<CartProduct> cartProducts = [];
 
   bool _isLoading = true;
 
@@ -59,7 +61,7 @@ class _ProductsListState extends State<ProductsList> {
     var amount = '';
     String productString = '';
 
-    for (CartProduct product in _cartProducts) {
+    for (CartProduct product in cartProducts) {
       amount += '+${product.price}*${product.countNumber}';
       productString += '${product.productName}.';
       productString += '${product.countNumber}.';
@@ -82,7 +84,7 @@ class _ProductsListState extends State<ProductsList> {
       "items": productString
     });
 
-    _cartProducts.removeRange(0, _cartProducts.length);
+    cartProducts.removeRange(0, cartProducts.length);
 
     for (ProductDetails p in _productListSearched) {
       var index = _productListSearched.indexOf(p);
@@ -120,7 +122,7 @@ class _ProductsListState extends State<ProductsList> {
           'userId': '${prefs.getInt('userId')}'
         },
       ).timeout(
-        const Duration(seconds: 2),
+        const Duration(seconds: 7),
         onTimeout: () {
           return http.Response('Error', 408);
         },
@@ -136,6 +138,7 @@ class _ProductsListState extends State<ProductsList> {
           print(_productListSearched[1].toString());
         });
       } else {
+        print(response.body.toString());
         print('error in status code ${response.body.toString()}');
         setState(() {
           _isLoading = false;
@@ -152,8 +155,8 @@ class _ProductsListState extends State<ProductsList> {
   }
 
   int findProductIndexById(int productId) {
-    for (int i = 0; i < _cartProducts.length; i++) {
-      if (_cartProducts[i].id == productId) {
+    for (int i = 0; i < cartProducts.length; i++) {
+      if (cartProducts[i].id == productId) {
         return i;
       }
     }
@@ -163,7 +166,7 @@ class _ProductsListState extends State<ProductsList> {
 
   removeProductFromCart(productId) {
     if (findProductIndexById(productId) >= 0) {
-      _cartProducts.removeAt(findProductIndexById(productId));
+      cartProducts.removeAt(findProductIndexById(productId));
     }
     setState(() {});
   }
@@ -171,12 +174,12 @@ class _ProductsListState extends State<ProductsList> {
   addProductInCart(ProductDetails product) {
     if (findProductIndexById(product.id) >= 0) {
       print("Product fount");
-      _cartProducts[findProductIndexById(product.id)].countNumber =
+      cartProducts[findProductIndexById(product.id)].countNumber =
           product.countNumber;
     } else {
       print("Product fount");
 
-      _cartProducts.add(CartProduct(
+      cartProducts.add(CartProduct(
         id: product.id,
         productName: product.productName,
         countNumber: product.countNumber,
@@ -267,6 +270,24 @@ class _ProductsListState extends State<ProductsList> {
     );
   }
 
+  unselectProduct(index) {
+    setState(() {
+      _productListSearched[index].countNumber = 0;
+      _productListSearched[index].isSelected = false;
+      removeProductFromCart(_productListSearched[index].id);
+    });
+  }
+
+  selectProduct(int index) {
+    setState(() {
+      _productListSearched[index].countNumber++;
+
+      _productListSearched[index].isSelected = true;
+
+      addProductInCart(_productListSearched[index]);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     size = MediaQuery.of(context).size;
@@ -289,14 +310,14 @@ class _ProductsListState extends State<ProductsList> {
           actions: [
             IconButton(
               icon: const Icon(
-                Icons.add_shopping_cart,
+                Icons.store_outlined,
                 color: Colors.white,
               ),
-              tooltip: 'Add Product',
+              tooltip: 'Product Master',
               onPressed: () {
                 Navigator.push(context, MaterialPageRoute(
                   builder: (context) {
-                    return Addproduct();
+                    return ProductMaster();
                   },
                 ));
               },
@@ -308,7 +329,7 @@ class _ProductsListState extends State<ProductsList> {
             padding: EdgeInsets.only(
               bottom: height * 0.065,
             ),
-            child: _cartProducts.isNotEmpty
+            child: cartProducts.isNotEmpty
                 ? Container(
                     decoration:
                         BoxDecoration(borderRadius: BorderRadius.circular(50)),
@@ -318,10 +339,17 @@ class _ProductsListState extends State<ProductsList> {
                       isExtended: true,
                       backgroundColor: Colors.blueAccent,
                       onPressed: () {
-                        if (_cartProducts.isEmpty) {
+                        if (cartProducts.isEmpty) {
                           nonSelectWarning();
                         } else {
-                          printReciept();
+                          // printReciept();
+                          Navigator.push(context, MaterialPageRoute(
+                            builder: (context) {
+                              return Cartsummary(
+                                cartProducts: cartProducts,
+                              );
+                            },
+                          ));
                         }
                       },
                       child: Center(
@@ -368,7 +396,7 @@ class _ProductsListState extends State<ProductsList> {
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Text(
-                                      '${_cartProducts.length}',
+                                      '${cartProducts.length}',
                                       style: TextStyle(
                                           fontSize:
                                               getadaptiveTextSize(context, 20),
@@ -468,7 +496,10 @@ class _ProductsListState extends State<ProductsList> {
               child: Expanded(
                 child: _isLoading
                     ? Center(
-                        child: Lottie.asset('assets/animations/loader.json'))
+                        child: Container(
+                            // height: 200,
+                            child: Lottie.asset('assets/animations/loader.json',
+                                height: 100)))
                     : RefreshIndicator(
                         onRefresh: () => _fetchProducts(),
                         // strokeWidth: 10,
@@ -502,41 +533,43 @@ class _ProductsListState extends State<ProductsList> {
                                       child: InkWell(
                                         // key: widgetKey,
                                         onLongPress: () {
-                                          _productListSearched[index]
-                                              .countNumber = 0;
+                                          unselectProduct(index);
+                                          // _productListSearched[index]
+                                          //     .countNumber = 0;
 
-                                          _productListSearched[index]
-                                              .isSelected = false;
+                                          // _productListSearched[index]
+                                          //     .isSelected = false;
 
-                                          removeProductFromCart(
-                                              _productListSearched[index].id);
+                                          // removeProductFromCart(
+                                          //     _productListSearched[index].id);
 
-                                          setState(() {});
+                                          // setState(() {});
                                         },
                                         onTap: () {
-                                          _productListSearched[index]
-                                              .countNumber++;
+                                          selectProduct(index);
+                                          // _productListSearched[index]
+                                          //     .countNumber++;
 
-                                          _productListSearched[index]
-                                              .isSelected = true;
+                                          // _productListSearched[index]
+                                          //     .isSelected = true;
 
-                                          // _cartProducts.add(CartProduct(
-                                          //   id: _productListSearched[index].id,
-                                          //   productName: _productListSearched[index]
-                                          //       .productName,
-                                          //   countNumber: _productListSearched[index]
-                                          //       .countNumber,
-                                          //   price:
-                                          //       _productListSearched[index].price,
-                                          // ));
+                                          // // _cartProducts.add(CartProduct(
+                                          // //   id: _productListSearched[index].id,
+                                          // //   productName: _productListSearched[index]
+                                          // //       .productName,
+                                          // //   countNumber: _productListSearched[index]
+                                          // //       .countNumber,
+                                          // //   price:
+                                          // //       _productListSearched[index].price,
+                                          // // ));
 
-                                          addProductInCart(
-                                              _productListSearched[index]);
+                                          // addProductInCart(
+                                          //     _productListSearched[index]);
 
-                                          // print(_cartProducts[1].toString());
-                                          // productClick(GlobalKey());
+                                          // // print(_cartProducts[1].toString());
+                                          // // productClick(GlobalKey());
 
-                                          setState(() {});
+                                          // setState(() {});
                                         },
                                         child: Container(
                                           // height: height * 0.50,
@@ -591,13 +624,8 @@ class _ProductsListState extends State<ProductsList> {
                                                               .withOpacity(0.7),
                                                           // color: containerColor,
                                                           borderRadius:
-                                                              BorderRadius.only(
-                                                                  bottomLeft: Radius
-                                                                      .circular(
-                                                                          10),
-                                                                  bottomRight: Radius
-                                                                      .circular(
-                                                                          10)),
+                                                              BorderRadius
+                                                                  .circular(10),
                                                         ),
                                                         child: Column(
                                                           children: [
@@ -659,18 +687,26 @@ class _ProductsListState extends State<ProductsList> {
                                                         false
                                                     ? Container()
                                                     : Container(
-                                                        color: const Color
-                                                                .fromARGB(255,
-                                                                216, 215, 215)
-                                                            .withOpacity(0.7),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color: const Color
+                                                                  .fromARGB(255,
+                                                                  216, 215, 215)
+                                                              .withOpacity(0.7),
+                                                          // color: containerColor,
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(10),
+                                                        ),
                                                         child: Center(
                                                           child: Text(
                                                             '${_productListSearched[index].countNumber}',
                                                             style: TextStyle(
-                                                                fontSize:
-                                                                    getadaptiveTextSize(
-                                                                        context,
-                                                                        25)),
+                                                              fontSize:
+                                                                  getadaptiveTextSize(
+                                                                      context,
+                                                                      25),
+                                                            ),
                                                           ),
                                                         ),
                                                       )

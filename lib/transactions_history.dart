@@ -67,12 +67,14 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
   Future<List<TransactionDetailsSQL>> _fetchDatao() async {
     print("in fetch method");
     List<Map<String, Object?>>? data = await dbs.getDBdata();
+    print('Data from sql ${data}');
     print(TransactionDetailsSQL.fromJsonList(data));
     return TransactionDetailsSQL.fromJsonList(data);
   }
 
   Future<List> _fetchData() async {
     List<Map<String, Object?>>? data = await dbs.getDBdata();
+
     print("in fetch method");
     List<TransactionDetailsSQL> transactionList =
         data.map((item) => TransactionDetailsSQL.fromJson(item)).toList();
@@ -127,13 +129,13 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
 
     try {
       final response = await http.get(
-        Uri.parse('$BASE_URL/transaction'),
+        Uri.parse('$BASE_URL/transaction/current-day'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'userId': '${prefs.getInt('userId')}',
           'itemCount': "88",
           'pageNumber': "0",
-          "date": "Jan 24, 2025"
+          "date": '${DateFormat('yMMMd').format(DateTime.now()).toString()}'
         },
       );
 
@@ -690,36 +692,60 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
                                               //     ? changeSyncStatus(true)
                                               //     : changeSyncStatus(false)
 
-                                              (transaction.status.toString() ==
-                                                      '1')
-                                                  ? Container(
-                                                      // color: Colors.green,
-                                                      // child: Text(transaction
-                                                      //     .status
-                                                      //     .toString())
-                                                      // Icon(
-                                                      //   Icons.sync,
-                                                      //   color: Colors.green,
-                                                      //   size:
-                                                      //       getadaptiveTextSize(
-                                                      //           context, 30),
-                                                      // ),
-                                                      )
-                                                  : Container(
-                                                      // color: Colors.amber,
-                                                      child: Icon(
-                                                        Icons.sync_problem,
-                                                        color: Colors.amber,
-                                                        size:
-                                                            getadaptiveTextSize(
-                                                                context, 30),
-                                                      ),
-                                                    ),
-
-                                              // Container(
-                                              //   child: Text(
-                                              //       '${transaction.status.toString()}'),
-                                              // ),
+                                              Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceEvenly,
+                                                children: [
+                                                  (transaction.tranSource
+                                                              .toString() ==
+                                                          "PRODUCT")
+                                                      ? Container(
+                                                          child: Icon(
+                                                            Icons.shopping_cart,
+                                                            color: Colors.grey,
+                                                            size:
+                                                                getadaptiveTextSize(
+                                                                    context,
+                                                                    30),
+                                                          ),
+                                                        )
+                                                      : Container(
+                                                          child: Icon(
+                                                            Icons.calculate,
+                                                            color: Colors.grey,
+                                                            size:
+                                                                getadaptiveTextSize(
+                                                                    context,
+                                                                    20),
+                                                          ),
+                                                        ),
+                                                  (transaction.status
+                                                              .toString() ==
+                                                          '1')
+                                                      ? Container(
+                                                          // child: Icon(
+                                                          //   Icons.sync,
+                                                          //   color: Colors.green,
+                                                          //   size:
+                                                          //       getadaptiveTextSize(
+                                                          //           context,
+                                                          //           30),
+                                                          // ),
+                                                          )
+                                                      : Container(
+                                                          // color: Colors.amber,
+                                                          child: Icon(
+                                                            Icons.sync_problem,
+                                                            color: Colors.amber,
+                                                            size:
+                                                                getadaptiveTextSize(
+                                                                    context,
+                                                                    30),
+                                                          ),
+                                                        ),
+                                                ],
+                                              ),
 
                                               Container(
 

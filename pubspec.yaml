@@ -54,6 +54,9 @@ dependencies:
   custom_image_crop: ^0.1.1
   add_to_cart_animation: ^2.0.4
   bluetooth_print_plus: ^2.4.5
+  print_bluetooth_thermal: ^1.1.5
+  flutter_esc_pos_utils: ^1.0.1
+  widgets_to_image: ^1.0.0
 
 flutter_icons:
   image_path: "assets/images/logo.png"

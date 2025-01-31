@@ -1,12 +1,9 @@
 import 'dart:convert';
-import 'dart:ffi';
 import 'dart:io';
 import 'dart:math';
 
 import 'package:cash_register/helper/helper.dart';
-import 'package:cash_register/homepage.dart';
-import 'package:cash_register/imageCrop.dart';
-import 'package:cash_register/products.dart';
+import 'package:cash_register/helper/product.dart';
 import 'package:custom_image_crop/custom_image_crop.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -14,14 +11,16 @@ import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
-class Addproduct extends StatefulWidget {
-  const Addproduct({super.key});
+class EditProduct extends StatefulWidget {
+  CartProduct cartProduct;
+  EditProduct({super.key, required this.cartProduct});
 
   @override
-  State<Addproduct> createState() => _AddproductState();
+  State<EditProduct> createState() => _EditProductState();
 }
 
-class _AddproductState extends State<Addproduct> {
+class _EditProductState extends State<EditProduct> {
+  late CartProduct product;
   var size, width, height;
   File? galleryFile;
   late File file;
@@ -386,6 +385,7 @@ class _AddproductState extends State<Addproduct> {
           ),
         );
       } else {
+        print("image is : ${imageBase64}");
         try {
           showDialog(
             context: context,
@@ -401,20 +401,17 @@ class _AddproductState extends State<Addproduct> {
             },
           );
 
-          final response = await http.post(
-            Uri.parse(BASE_URL + '/product'),
+          final response = await http.put(
+            Uri.parse('$BASE_URL/product-update'),
             headers: <String, String>{
               'Content-Type': 'application/json; charset=UTF-8',
               'userId': '${prefs.getInt('userId')}'
             },
             body: jsonEncode(<String, dynamic>{
+              'id': "",
               'productName': productNameController.text.toString(),
               'price': productPriceController.text.toString(),
               'image': imageBase64,
-              'productCategory': categoryValue,
-              'measurementUnit': unitValue,
-              'gstSlab': gstSlab.substring(0, gstSlab.length - 1),
-              'qty': productQuntityeController.text.toString(),
               'user': {
                 'userId': '${prefs.getInt('userId')}',
               }
@@ -556,13 +553,14 @@ class _AddproductState extends State<Addproduct> {
 
   @override
   Widget build(BuildContext context) {
+    product = widget.cartProduct;
     size = MediaQuery.of(context).size;
     width = size.width;
     height = size.height;
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Add Product',
+          'Edit Product',
           style: TextStyle(color: Colors.white, fontFamily: 'Becham'),
         ),
         backgroundColor: Colors.blue,
@@ -866,7 +864,7 @@ class _AddproductState extends State<Addproduct> {
                         const EdgeInsets.symmetric(vertical: 5, horizontal: 15),
                     child: Center(
                       child: Text(
-                        "Add Product",
+                        "Update Product",
                         style: TextStyle(
                           fontSize: getadaptiveTextSize(context, 13),
                         ),

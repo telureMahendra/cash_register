@@ -1,4 +1,5 @@
-import 'package:cash_register/helper/ConnectPrinter.dart';
+import 'package:cash_register/ConnectPrinter_print_bluetooth_thermal.dart';
+import 'package:cash_register/helper/ConnectPrinter_Blue_plus.dart';
 import 'package:cash_register/login.dart';
 
 import 'package:cash_register/profile.dart';

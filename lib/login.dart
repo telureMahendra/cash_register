@@ -34,7 +34,7 @@ class _SignupScreenState extends State<LoginScreen> {
     passwordController.dispose();
   }
 
-  FontSize fs = FontSize();
+  TextFontSize fs = TextFontSize();
 
   Future<void> saveLoginStatus(bool isLoggedIn) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -109,6 +109,10 @@ class _SignupScreenState extends State<LoginScreen> {
           await prefs.setString('email', jsonData['email'] ?? '');
           await prefs.setString('mobile', jsonData['mobile'] ?? '');
           await prefs.setString('password', jsonData['password'] ?? '');
+          await prefs.setBool(
+              'isisCalculatorEnabled', jsonData['isCalculatorEnabled'] ?? true);
+          await prefs.setBool(
+              'isProductEnabled', jsonData['isProductEnabled'] ?? false);
 
           saveLoginStatus(true);
 
@@ -322,13 +326,13 @@ class _SignupScreenState extends State<LoginScreen> {
                             color: Colors.black45, fontSize: 18),
                         enabledBorder: OutlineInputBorder(
                           borderSide: BorderSide.none,
-                          borderRadius: BorderRadius.circular(30),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         border: InputBorder.none,
                         focusedBorder: OutlineInputBorder(
                           borderSide:
                               const BorderSide(color: Colors.blue, width: 2),
-                          borderRadius: BorderRadius.circular(30),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         filled: true,
                         fillColor: const Color(0xFFedf0f8),

@@ -31,6 +31,8 @@ class _EditBusinessDetailsState extends State<EditBusinessDetails> {
   final TextEditingController mobileController = TextEditingController();
   final TextEditingController gstNumberController = TextEditingController();
   final TextEditingController upiIDController = TextEditingController();
+  final TextEditingController cinNumberController = TextEditingController();
+  final TextEditingController panNumberController = TextEditingController();
 
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
@@ -100,7 +102,10 @@ class _EditBusinessDetailsState extends State<EditBusinessDetails> {
               context: context,
               builder: (context) => AlertDialog(
                     title: const Text('Success'),
-                    content: Text(response.body.toString()),
+                    content: Container(
+                        height: height * 0.025,
+                        width: width * 0.80,
+                        child: Center(child: Text(response.body.toString()))),
                     actions: [
                       TextButton(
                         child: const Text('Ok'),
@@ -354,16 +359,7 @@ class _EditBusinessDetailsState extends State<EditBusinessDetails> {
                   //     return null;
                   //   },
                   // ),
-                  TextFieldInput(
-                    icon: Icons.percent,
-                    textEditingController: gstNumberController,
-                    hintText: 'GST Number(Optional)',
-                    textInputType: TextInputType.text,
-                    length: 30,
-                    validator: (value) {
-                      return null;
-                    },
-                  ),
+
                   Padding(
                     padding: const EdgeInsets.symmetric(
                         vertical: 10, horizontal: 20),
@@ -379,13 +375,13 @@ class _EditBusinessDetailsState extends State<EditBusinessDetails> {
                             color: Colors.black45, fontSize: 18),
                         enabledBorder: OutlineInputBorder(
                           borderSide: BorderSide.none,
-                          borderRadius: BorderRadius.circular(30),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         border: InputBorder.none,
                         focusedBorder: OutlineInputBorder(
                           borderSide:
                               const BorderSide(color: Colors.blue, width: 2),
-                          borderRadius: BorderRadius.circular(30),
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         filled: true,
                         fillColor: const Color(0xFFedf0f8),
@@ -454,6 +450,36 @@ class _EditBusinessDetailsState extends State<EditBusinessDetails> {
                         ],
                       ),
                     ),
+                  ),
+                  TextFieldInput(
+                    icon: Icons.percent,
+                    textEditingController: gstNumberController,
+                    hintText: 'GST Number(Optional)',
+                    textInputType: TextInputType.text,
+                    length: 15,
+                    validator: (value) {
+                      return null;
+                    },
+                  ),
+                  TextFieldInput(
+                    icon: Icons.card_travel,
+                    textEditingController: cinNumberController,
+                    hintText: 'CIN Number(Optional)',
+                    textInputType: TextInputType.text,
+                    length: 21,
+                    validator: (value) {
+                      return null;
+                    },
+                  ),
+                  TextFieldInput(
+                    icon: Icons.card_membership,
+                    textEditingController: panNumberController,
+                    hintText: 'PAN Number(Optional)',
+                    textInputType: TextInputType.text,
+                    length: 10,
+                    validator: (value) {
+                      return null;
+                    },
                   ),
                   TextFieldInput(
                     icon: Icons.place_rounded,

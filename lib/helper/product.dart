@@ -1,5 +1,13 @@
 import 'dart:ffi';
 
+import 'package:flutter/foundation.dart';
+
+class CalculatorItem {
+  var itemName;
+  var price;
+  CalculatorItem({this.itemName, this.price});
+}
+
 class ProductDetails {
   var id;
   final String productName;
@@ -7,6 +15,10 @@ class ProductDetails {
   final String price;
   bool isSelected;
   var countNumber;
+  var productCategory;
+  var measurementUnit;
+  var gstSlab;
+  var qty;
 
   ProductDetails({
     this.id,
@@ -15,6 +27,10 @@ class ProductDetails {
     required this.price,
     required this.isSelected,
     this.countNumber,
+    this.productCategory,
+    this.measurementUnit,
+    this.gstSlab,
+    this.qty,
   });
 
   factory ProductDetails.fromJson(Map<String, dynamic> json) {
@@ -25,6 +41,10 @@ class ProductDetails {
       isSelected: json['isSelected'] ?? false,
       price: json['price'],
       countNumber: json['countNumber'],
+      productCategory: json['productCategory'],
+      measurementUnit: json['measurementUnit'],
+      gstSlab: json['gstSlab'],
+      qty: json['qty'],
     );
   }
 
@@ -47,7 +67,7 @@ class ProductDetails {
 class CartProduct {
   final int id;
   final String productName;
-  final String price;
+  var price;
   var image;
   var countNumber;
 
@@ -56,7 +76,7 @@ class CartProduct {
       required this.productName,
       this.countNumber,
       this.image,
-      required this.price});
+      this.price});
 }
 
 class ReceiptProduct {
