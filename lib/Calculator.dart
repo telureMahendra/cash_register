@@ -1520,11 +1520,6 @@ class _CalculatorState extends State<Calculator> {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         insetPadding: EdgeInsets.only(bottom: 20),
-
-        // title: const Center(
-        //   child: Text('Payment Successful'),
-        // ),
-        // content: Text('Faild To store'),
         content: Container(
             padding: EdgeInsets.only(bottom: 0),
             height: height * 0.268,
@@ -1532,10 +1527,7 @@ class _CalculatorState extends State<Calculator> {
             child: Column(
               children: [
                 Lottie.asset('assets/animations/check_animation.json',
-                    height: height * 0.10,
-                    // controller: _controller,
-                    repeat: false,
-                    animate: true),
+                    height: height * 0.10, repeat: false, animate: true),
                 Container(
                   padding: EdgeInsets.only(bottom: 0),
                   child: Text(
@@ -1588,7 +1580,6 @@ class _CalculatorState extends State<Calculator> {
                 ),
               ],
             )),
-
         actions: [
           // Center(
           //   child: Container(

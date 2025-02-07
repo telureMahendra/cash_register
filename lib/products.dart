@@ -14,6 +14,7 @@ import 'package:http/http.dart' as http;
 import 'package:math_expressions/math_expressions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:add_to_cart_animation/add_to_cart_animation.dart';
+import 'package:skeleton_text/skeleton_text.dart';
 
 class ProductsList extends StatefulWidget {
   const ProductsList({super.key});
@@ -119,10 +120,12 @@ class ProductsListState extends State<ProductsList> {
         Uri.parse('$BASE_URL/product'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
-          'userId': '${prefs.getInt('userId')}'
+          'userId': '${prefs.getInt('userId')}',
+          'itemCount': "88",
+          'pageNumber': "0",
         },
       ).timeout(
-        const Duration(seconds: 7),
+        const Duration(seconds: 10),
         onTimeout: () {
           return http.Response('Error', 408);
         },
@@ -495,11 +498,12 @@ class ProductsListState extends State<ProductsList> {
             Container(
               child: Expanded(
                 child: _isLoading
-                    ? Center(
-                        child: Container(
-                            // height: 200,
-                            child: Lottie.asset('assets/animations/loader.json',
-                                height: 100)))
+                    ? buildSkeleton(context)
+                    // Center(
+                    //     child: Container(
+                    //         // height: 200,
+                    //         child: Lottie.asset('assets/animations/loader.json',
+                    //             height: 100)))
                     : RefreshIndicator(
                         onRefresh: () => _fetchProducts(),
                         // strokeWidth: 10,
@@ -727,35 +731,97 @@ class ProductsListState extends State<ProductsList> {
       ),
     );
   }
-}
 
-class AppListItem extends StatelessWidget {
-  final GlobalKey widgetKey = GlobalKey();
-  final int index;
-  final void Function(GlobalKey) onClick;
-
-  AppListItem({super.key, required this.onClick, required this.index});
-  @override
-  Widget build(BuildContext context) {
-    //  Container is mandatory. It can hold images or whatever you want
-    Container mandatoryContainer = Container(
-      key: widgetKey,
-      width: 60,
-      height: 60,
-      color: Colors.transparent,
-      child: Image.network(
-        "https://cdn.jsdelivr.net/gh/omerbyrk/add_to_cart_animation/example/assets/apple.png",
-        width: 60,
-        height: 60,
+  Widget buildSkeleton(BuildContext context) {
+    return GridView.builder(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 0.1,
       ),
-    );
+      itemCount: 15,
+      itemBuilder: (context, index) {
+        return TextButton(
+          onPressed: () {},
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Container(
+              // height: height * 0.50,
 
-    return ListTile(
-      onTap: () => onClick(widgetKey),
-      leading: mandatoryContainer,
-      title: Text(
-        "Animated Apple Product Image $index",
-      ),
+              decoration: BoxDecoration(
+                  color: const Color.fromARGB(255, 230, 226, 226),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(width: 1)),
+              child: Center(
+                child: Stack(
+                  children: [
+                    SkeletonAnimation(
+                      shimmerColor: Colors.grey,
+                      borderRadius: BorderRadius.circular(20),
+                      shimmerDuration: 500,
+                      child: Container(
+                        child: SizedBox(
+                          height: 90,
+                          width: 90,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      width: double.infinity,
+                      // color: Colors.transparent,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            height: height * 0.040,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                SkeletonAnimation(
+                                  shimmerColor: Colors.grey,
+                                  borderRadius: BorderRadius.circular(20),
+                                  shimmerDuration: 500,
+                                  child: Container(
+                                    color: const Color.fromARGB(
+                                        255, 208, 200, 200),
+                                    child: SizedBox(
+                                      height: 15,
+                                      width: 80,
+                                    ),
+                                  ),
+                                ),
+                                SkeletonAnimation(
+                                  shimmerColor: Colors.grey,
+                                  borderRadius: BorderRadius.circular(20),
+                                  shimmerDuration: 500,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                        color: const Color.fromARGB(
+                                            255, 208, 200, 200),
+                                        borderRadius: BorderRadius.only(
+                                          bottomLeft: Radius.circular(10),
+                                          bottomRight: Radius.circular(10),
+                                        )),
+                                    child: SizedBox(
+                                      height: 15,
+                                      width: 80,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

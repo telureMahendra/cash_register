@@ -15,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:intl/intl.dart';
 
 import 'package:http/http.dart' as http;
+import 'package:skeleton_text/skeleton_text.dart';
 
 class TransactionsHistory extends StatefulWidget {
   const TransactionsHistory({super.key});
@@ -113,19 +114,19 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
 
     List data = [];
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Center(
-          child: Lottie.asset('assets/animations/loader.json',
-              height: MediaQuery.of(context).size.height * 0.17,
-              // controller: _controller,
-              repeat: true,
-              animate: true),
-        );
-      },
-    );
+    // showDialog(
+    //   context: context,
+    //   barrierDismissible: false,
+    //   builder: (BuildContext context) {
+    //     return Center(
+    //       child: Lottie.asset('assets/animations/loader.json',
+    //           height: MediaQuery.of(context).size.height * 0.17,
+    //           // controller: _controller,
+    //           repeat: true,
+    //           animate: true),
+    //     );
+    //   },
+    // );
 
     try {
       final response = await http.get(
@@ -137,25 +138,30 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
           'pageNumber': "0",
           "date": '${DateFormat('yMMMd').format(DateTime.now()).toString()}'
         },
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          return http.Response('Error', 408);
+        },
       );
 
       // response = utf8.decode(response.bodyBytes);
 
       if (response.statusCode == 200) {
-        Navigator.pop(context);
+        // Navigator.pop(context);
         return TransactionDetails.fromJsonList(
             json.decode(utf8.decode(response.bodyBytes)));
         // return TransactionDetails.fromJsonList(json.decode(response.body));
       } else {
         //  return  Text('No transaction data');
-        Navigator.pop(context);
+        // Navigator.pop(context);
         // return Text("data");
         alertMessage(response.body.toString());
         throw Exception('Request Failed.');
         // return ;
       }
     } on SocketException catch (e) {
-      Navigator.pop(context);
+      // Navigator.pop(context);
       return data;
     }
   }
@@ -167,19 +173,19 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
   Future<List<TransactionDetails>> fetchTransaction() async {
     final prefs = await SharedPreferences.getInstance();
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Center(
-          child: Lottie.asset('assets/animations/loader.json',
-              height: MediaQuery.of(context).size.height * 0.17,
-              // controller: _controller,
-              repeat: true,
-              animate: true),
-        );
-      },
-    );
+    // showDialog(
+    //   context: context,
+    //   barrierDismissible: false,
+    //   builder: (BuildContext context) {
+    //     return Center(
+    //       child: Lottie.asset('assets/animations/loader.json',
+    //           height: MediaQuery.of(context).size.height * 0.17,
+    //           // controller: _controller,
+    //           repeat: true,
+    //           animate: true),
+    //     );
+    //   },
+    // );
 
     final response = await http.get(
       Uri.parse('$BASE_URL/transaction'),
@@ -192,13 +198,13 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
     // response = utf8.decode(response.bodyBytes);
 
     if (response.statusCode == 200) {
-      Navigator.pop(context);
+      // Navigator.pop(context);
       return TransactionDetails.fromJsonList(
           json.decode(utf8.decode(response.bodyBytes)));
       // return TransactionDetails.fromJsonList(json.decode(response.body));
     } else {
       //  return  Text('No transaction data');
-      Navigator.pop(context);
+      // Navigator.pop(context);
       // return Text("data");
       alertMessage(response.body.toString());
       throw Exception('Request Failed.');
@@ -327,237 +333,6 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
           backgroundColor: Colors.blue,
           foregroundColor: Colors.white,
         ),
-
-        // body: Center(
-        //   child: ListView.builder(
-        //     itemBuilder: (context, index) {
-        //       return Center(
-        //         child: Card(
-        //             elevation: 5,
-        //             child: Padding(
-        //               padding: const EdgeInsets.all(8.0),
-        //               child: Container(
-        //                   height: height * 0.15,
-        //                   width: width * 0.90,
-        //                   child: Row(
-        //                     // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        //                     // crossAxisAlignment: CrossAxisAlignment.start,
-        //                     children: [
-        //                       Container(
-        //                         width: width * 0.60,
-        //                         child: Column(
-        //                           crossAxisAlignment: CrossAxisAlignment.center,
-        //                           children: [
-        //                             Container(
-        //                               width: width - (width / 4),
-        //                               // height: 130,
-        //                               child: Row(
-        //                                 mainAxisAlignment:
-        //                                     MainAxisAlignment.spaceBetween,
-        //                                 children: [
-        //                                   Container(
-        //                                     padding: EdgeInsets.only(top: 10),
-        //                                     child: Text(
-        //                                       '+ ${transactionList[index]["amount"]}',
-        //                                       style: TextStyle(
-        //                                         fontSize: getadaptiveTextSize(
-        //                                             context, 15),
-        //                                         color: Colors.green,
-        //                                       ),
-        //                                     ),
-        //                                   ),
-        //                                 ],
-        //                               ),
-        //                             ),
-        //                             Container(
-        //                               width: width - (width / 4),
-        //                               height: height * 0.08,
-        //                               padding:
-        //                                   EdgeInsets.only(top: 20, left: 26),
-        //                               child: Column(
-        //                                   mainAxisAlignment:
-        //                                       MainAxisAlignment.spaceBetween,
-        //                                   crossAxisAlignment:
-        //                                       CrossAxisAlignment.start,
-        //                                   children: [
-        //                                     Text(
-        //                                         '${transactionList[index]["dateTime"]}'),
-        //                                     Text(
-        //                                         '${transactionList[index]["time"]}')
-        //                                   ]),
-        //                             ),
-        //                           ],
-        //                         ),
-        //                       ),
-        //                       Container(
-
-        //                           // width: (width-(width/4)*3),
-        //                           width: width * 0.30,
-        //                           child: Column(
-        //                             mainAxisAlignment:
-        //                                 MainAxisAlignment.spaceEvenly,
-        //                             children: [
-        //                               if (transactionList[index]["Method"] ==
-        //                                   "CASH")
-        //                                 Icon(
-        //                                   Icons.money,
-        //                                   size: width * 0.10,
-        //                                 ),
-        //                               if (transactionList[index]["Method"] !=
-        //                                   "CASH")
-        //                                 Icon(
-        //                                   Icons.qr_code,
-        //                                   // size: width * 0.10,
-        //                                   size:
-        //                                       getadaptiveTextSize(context, 30),
-        //                                 ),
-        //                               Text(
-        //                                 '${transactionList[index]["Method"]}',
-        //                                 style: TextStyle(
-        //                                     fontSize: getadaptiveTextSize(
-        //                                         context, 12)),
-        //                               )
-        //                             ],
-        //                           )),
-        //                     ],
-        //                   )),
-        //             )),
-        //       );
-        //     },
-        //     itemCount: transactionList.length,
-        //   ),
-        // )
-
-        // body: FutureBuilder<List<TransactionDetails>>(
-        //   future: fetchTransaction(),
-        //   builder: (context, snapshot) {
-        //     if (snapshot.connectionState == ConnectionState.waiting) {
-        //       return Center(
-        //         // child: CircularProgressIndicator(),
-        //         child: null,
-        //       );
-        //     } else if (snapshot.hasError) {
-        //       return Center(
-        //         child: Text(
-        //           'Error: ${snapshot.error}',
-        //           style: TextStyle(
-        //               color: Colors.red,
-        //               fontSize: getadaptiveTextSize(context, 20)),
-        //         ),
-        //       ); // Handle error
-        //     } else if (snapshot.hasData) {
-        //       return ListView.builder(
-        //         itemCount: snapshot.data!.length,
-        //         itemBuilder: (context, index) {
-        //           final transaction = snapshot.data![index];
-        //           // print(transaction.time);
-        //           // return ListTile(
-        //           //   title: Text(transaction.method),
-        //           //   subtitle: Text('${transaction.date} - ${transaction.time}'),
-        //           //   trailing: Text(transaction.amount),
-        //           // );
-        //           return (Center(
-        //             child: Card(
-        //                 elevation: 5,
-        //                 child: Padding(
-        //                   padding: const EdgeInsets.all(8.0),
-        //                   child: Container(
-        //                       height: height * 0.15,
-        //                       width: width * 0.90,
-        //                       child: Row(
-        //                         // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        //                         // crossAxisAlignment: CrossAxisAlignment.start,
-        //                         children: [
-        //                           Container(
-        //                             width: width * 0.60,
-        //                             child: Column(
-        //                               crossAxisAlignment:
-        //                                   CrossAxisAlignment.center,
-        //                               children: [
-        //                                 Container(
-        //                                   width: width - (width / 4),
-        //                                   // height: 130,
-        //                                   child: Row(
-        //                                     mainAxisAlignment:
-        //                                         MainAxisAlignment.spaceBetween,
-        //                                     children: [
-        //                                       Container(
-        //                                         padding: EdgeInsets.only(top: 10),
-        //                                         child: Text(
-        //                                           '+ ${transaction.amount.toString()}',
-        //                                           style: TextStyle(
-        //                                             fontSize: getadaptiveTextSize(
-        //                                                 context, 15),
-        //                                             color: Colors.green,
-        //                                           ),
-        //                                         ),
-        //                                       ),
-        //                                     ],
-        //                                   ),
-        //                                 ),
-        //                                 Container(
-        //                                   width: width - (width / 4),
-        //                                   height: height * 0.08,
-        //                                   padding:
-        //                                       EdgeInsets.only(top: 20, left: 26),
-        //                                   child: Column(
-        //                                       mainAxisAlignment:
-        //                                           MainAxisAlignment.spaceBetween,
-        //                                       crossAxisAlignment:
-        //                                           CrossAxisAlignment.start,
-        //                                       children: [
-        //                                         Text(
-        //                                             '${transaction.date.toString()}'),
-        //                                         Text('${transaction.time}')
-        //                                       ]),
-        //                                 ),
-        //                               ],
-        //                             ),
-        //                           ),
-        //                           Container(
-
-        //                               // width: (width-(width/4)*3),
-        //                               width: width * 0.30,
-        //                               child: Column(
-        //                                 mainAxisAlignment:
-        //                                     MainAxisAlignment.spaceEvenly,
-        //                                 children: [
-        //                                   if (transaction.method == "CASH")
-        //                                     Icon(
-        //                                       Icons.money,
-        //                                       size: width * 0.10,
-        //                                     ),
-        //                                   if (transaction.method != "CASH")
-        //                                     Icon(
-        //                                       Icons.qr_code,
-        //                                       // size: width * 0.10,
-        //                                       size: getadaptiveTextSize(
-        //                                           context, 30),
-        //                                     ),
-        //                                   Text(
-        //                                     '${transaction.method}',
-        //                                     style: TextStyle(
-        //                                         fontSize: getadaptiveTextSize(
-        //                                             context, 12)),
-        //                                   )
-        //                                 ],
-        //                               )),
-        //                         ],
-        //                       )),
-        //                 )),
-        //           ));
-        //         },
-        //       );
-        //     } else if (!snapshot.hasData) {
-        //       return Center(
-        //         child: Text("No Transactions"),
-        //       );
-        //     } else {
-        //       return Text('No transaction data'); // Handle empty data case
-        //     }
-        //   },
-        // ),
-
         body: Center(
           child: Container(
             child: Column(
@@ -595,7 +370,7 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
                             ConnectionState.waiting) {
                           return Center(
                             // child: CircularProgressIndicator(),
-                            child: null,
+                            child: buildSkeleton(context),
                           );
                         } else if (snapshot.hasError) {
                           return Center(
@@ -606,17 +381,14 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
                                   fontSize: getadaptiveTextSize(context, 20)),
                             ),
                           ); // Handle error
+                        } else if (!snapshot.hasData) {
+                          return Text("data");
                         } else if (snapshot.hasData) {
                           return ListView.builder(
                             itemCount: snapshot.data!.length,
                             itemBuilder: (context, index) {
                               final transaction = snapshot.data![index];
-                              // print(transaction.time);
-                              // return ListTile(
-                              //   title: Text(transaction.method),
-                              //   subtitle: Text('${transaction.date} - ${transaction.time}'),
-                              //   trailing: Text(transaction.amount),
-                              // );
+
                               return (Center(
                                 child: Card(
                                     elevation: 5,
@@ -803,5 +575,157 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
             ),
           ),
         ));
+  }
+
+  Widget buildSkeleton(BuildContext context) {
+    return ListView.builder(
+        itemCount: 8,
+        itemBuilder: (BuildContext context, int index) {
+          return ListTile(
+            splashColor: const Color.fromARGB(255, 179, 172, 172),
+            title: Container(
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey,
+                    offset: const Offset(
+                      3.0,
+                      3.0,
+                    ),
+                    blurRadius: 5.0,
+                    spreadRadius: 1.0,
+                  ), //BoxShadow
+                  BoxShadow(
+                    color: const Color.fromARGB(255, 232, 229, 229),
+                    offset: const Offset(0.0, 0.0),
+                    blurRadius: 0.0,
+                    spreadRadius: 0.0,
+                  ), //BoxShadow
+                ],
+              ),
+              padding: EdgeInsets.all(5),
+              child: Column(
+                children: [
+                  Container(
+                      alignment: Alignment.topLeft,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // SkeletonAnimation(
+                          //   shimmerColor: Colors.grey,
+                          //   borderRadius: BorderRadius.circular(20),
+                          //   shimmerDuration: 500,
+                          //   child: Container(
+                          //     color: const Color.fromARGB(255, 208, 200, 200),
+                          //     child: SizedBox(
+                          //       height: 80,
+                          //       width: 80,
+                          //     ),
+                          //   ),
+                          // ),
+                          Container(
+                            width: width * 0.30,
+                            height: height * 0.085,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                SkeletonAnimation(
+                                  shimmerColor: Colors.grey,
+                                  borderRadius: BorderRadius.circular(5),
+                                  shimmerDuration: 500,
+                                  child: Container(
+                                    color: const Color.fromARGB(
+                                        255, 208, 200, 200),
+                                    child: SizedBox(
+                                      height: 25,
+                                      width: 100,
+                                    ),
+                                  ),
+                                ),
+                                SkeletonAnimation(
+                                  shimmerColor: Colors.grey,
+                                  borderRadius: BorderRadius.circular(5),
+                                  shimmerDuration: 500,
+                                  child: Container(
+                                    color: const Color.fromARGB(
+                                        255, 208, 200, 200),
+                                    child: SizedBox(
+                                      height: 15,
+                                      width: 100,
+                                    ),
+                                  ),
+                                ),
+                                SkeletonAnimation(
+                                  shimmerColor: Colors.grey,
+                                  borderRadius: BorderRadius.circular(5),
+                                  shimmerDuration: 500,
+                                  child: Container(
+                                    padding: EdgeInsets.only(left: 10),
+                                    color: const Color.fromARGB(
+                                        255, 208, 200, 200),
+                                    child: SizedBox(
+                                      height: 15,
+                                      width: 90,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SkeletonAnimation(
+                            shimmerColor: Colors.grey,
+                            borderRadius: BorderRadius.circular(5),
+                            shimmerDuration: 500,
+                            child: Container(
+                              color: const Color.fromARGB(255, 208, 200, 200),
+                              child: SizedBox(
+                                height: 35,
+                                width: 35,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: width * 0.15,
+                            height: height * 0.11,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                SkeletonAnimation(
+                                  shimmerColor: Colors.grey,
+                                  borderRadius: BorderRadius.circular(5),
+                                  shimmerDuration: 500,
+                                  child: Container(
+                                    color: const Color.fromARGB(
+                                        255, 208, 200, 200),
+                                    child: SizedBox(
+                                      height: 40,
+                                      width: 40,
+                                    ),
+                                  ),
+                                ),
+                                SkeletonAnimation(
+                                  shimmerColor: Colors.grey,
+                                  borderRadius: BorderRadius.circular(5),
+                                  shimmerDuration: 500,
+                                  child: Container(
+                                    color: const Color.fromARGB(
+                                        255, 208, 200, 200),
+                                    child: SizedBox(
+                                      height: 30,
+                                      width: 60,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      )),
+                ],
+              ),
+            ),
+          );
+        });
   }
 }

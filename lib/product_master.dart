@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:add_to_cart_animation/add_to_cart_animation.dart';
 import 'package:cash_register/addProduct.dart';
+import 'package:cash_register/edit_product.dart';
 import 'package:cash_register/helper/helper.dart';
 import 'package:cash_register/helper/product.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import 'package:skeleton_text/skeleton_text.dart';
 
 class ProductMaster extends StatefulWidget {
   const ProductMaster({super.key});
@@ -39,10 +41,12 @@ class _ProductMasterState extends State<ProductMaster> {
         Uri.parse('$BASE_URL/product'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
-          'userId': '${prefs.getInt('userId')}'
+          'userId': '${prefs.getInt('userId')}',
+          'itemCount': "88",
+          'pageNumber': "0",
         },
       ).timeout(
-        const Duration(seconds: 5),
+        const Duration(seconds: 10),
         onTimeout: () {
           return http.Response('Error', 408);
         },
@@ -57,6 +61,48 @@ class _ProductMasterState extends State<ProductMaster> {
           _isLoading = false;
           print(_productListSearched[1].toString());
         });
+      } else {
+        print(response.body);
+        print('error in status code: ${response.body.toString()}');
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } on SocketException catch (e) {
+      print("SocketException error $e");
+    } catch (e) {
+      print("error in catch $e");
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  deleteProduct(productId) async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      print(prefs.getInt('userId'));
+      final response = await http.delete(
+        Uri.parse('$BASE_URL/product-delete'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'userId': '${prefs.getInt('userId')}',
+          'productId': '$productId',
+        },
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          return http.Response('Error', 408);
+        },
+      );
+
+      if (response.statusCode == 204) {
+        print("response 200");
+        // _productListSearched = [];
+        _fetchProducts();
       } else {
         print(response.body);
         print('error in status code: ${response.body.toString()}');
@@ -160,96 +206,6 @@ class _ProductMasterState extends State<ProductMaster> {
         ),
       ),
 
-      // body: ListView(
-      //   shrinkWrap: true,
-      //   children: [
-      //     ListTile(
-      //       title: Container(
-      //         padding: EdgeInsets.all(15),
-      //         child: Column(
-      //           children: [
-      //             Container(
-      //                 alignment: Alignment.topLeft,
-      //                 child: Row(
-      //                   children: [
-      //                     Icon(Icons.person_2),
-      //                     Text(
-      //                       "Name",
-      //                       style: TextStyle(
-      //                           fontSize: getadaptiveTextSize(context, 15),
-      //                           fontWeight: FontWeight.bold),
-      //                     ),
-      //                   ],
-      //                 )),
-      //             Container(
-      //               padding: EdgeInsets.only(left: width * 0.08),
-      //               alignment: Alignment.topLeft,
-      //               child: Text('1324'),
-      //             )
-      //           ],
-      //         ),
-      //       ),
-      //       onTap: () {},
-      //     ),
-      //     ListTile(
-      //       title: Container(
-      //         padding: EdgeInsets.all(15),
-      //         child: Column(
-      //           children: [
-      //             Container(
-      //                 alignment: Alignment.topLeft,
-      //                 child: Row(
-      //                   children: [
-      //                     Icon(Icons.mark_email_read),
-      //                     Text(
-      //                       "Email",
-      //                       style: TextStyle(
-      //                           fontSize: getadaptiveTextSize(context, 15),
-      //                           fontWeight: FontWeight.bold),
-      //                     ),
-      //                   ],
-      //                 )),
-      //             Container(
-      //               padding: EdgeInsets.only(left: width * 0.08),
-      //               alignment: Alignment.topLeft,
-      //               child: Text('asdfgh'),
-      //             )
-      //           ],
-      //         ),
-      //       ),
-      //       onTap: () {},
-      //     ),
-      //     ListTile(
-      //       title: Container(
-      //         padding: EdgeInsets.all(15),
-      //         child: Column(
-      //           children: [
-      //             Container(
-      //                 alignment: Alignment.topLeft,
-      //                 child: Row(
-      //                   children: [
-      //                     Icon(Icons.phone_android),
-      //                     Text(
-      //                       "Mobile",
-      //                       style: TextStyle(
-      //                           fontSize: getadaptiveTextSize(context, 15),
-      //                           fontWeight: FontWeight.bold),
-      //                     ),
-      //                   ],
-      //                 )),
-      //             Container(
-      //               padding: EdgeInsets.only(left: width * 0.08),
-      //               alignment: Alignment.topLeft,
-      //               child: Text('edfghl'),
-      //             )
-      //           ],
-      //         ),
-      //       ),
-      //       onTap: () {},
-      //     ),
-      //   ],
-      // ),
-
       body: Center(
           child: Container(
         height: height * 0.90,
@@ -328,11 +284,12 @@ class _ProductMasterState extends State<ProductMaster> {
           Container(
             child: Expanded(
               child: _isLoading
-                  ? Center(
-                      child: Container(
-                          // height: 200,
-                          child: Lottie.asset('assets/animations/loader.json',
-                              height: 100)))
+                  ? buildSkeleton(context)
+                  // Center(
+                  //     child: Container(
+                  //         // height: 200,
+                  //         child: Lottie.asset('assets/animations/loader.json',
+                  //             height: 100)))
                   : RefreshIndicator(
                       onRefresh: () => _fetchProducts(),
                       // strokeWidth: 10,
@@ -447,7 +404,7 @@ class _ProductMasterState extends State<ProductMaster> {
                                                   child: Row(
                                                     children: [
                                                       Text(
-                                                        "500",
+                                                        '${_productListSearched[index].qty}',
                                                         style: TextStyle(
                                                           fontSize:
                                                               getadaptiveTextSize(
@@ -455,7 +412,9 @@ class _ProductMasterState extends State<ProductMaster> {
                                                         ),
                                                       ),
                                                       Text(
-                                                        "gm",
+                                                        _productListSearched[
+                                                                index]
+                                                            .measurementUnit,
                                                         style: TextStyle(
                                                           fontSize:
                                                               getadaptiveTextSize(
@@ -485,7 +444,11 @@ class _ProductMasterState extends State<ProductMaster> {
                                                               context,
                                                               MaterialPageRoute(
                                                             builder: (context) {
-                                                              return Addproduct();
+                                                              return EditProduct(
+                                                                productDetails:
+                                                                    _productListSearched[
+                                                                        index],
+                                                              );
                                                             },
                                                           ));
                                                         },
@@ -501,13 +464,10 @@ class _ProductMasterState extends State<ProductMaster> {
                                                         tooltip:
                                                             'Delete Product',
                                                         onPressed: () {
-                                                          Navigator.push(
-                                                              context,
-                                                              MaterialPageRoute(
-                                                            builder: (context) {
-                                                              return Addproduct();
-                                                            },
-                                                          ));
+                                                          deleteProduct(
+                                                              _productListSearched[
+                                                                      index]
+                                                                  .id);
                                                         },
                                                       ),
                                                     ],
@@ -527,6 +487,144 @@ class _ProductMasterState extends State<ProductMaster> {
         ]),
       )),
     );
+  }
+
+  Widget buildSkeleton(BuildContext context) {
+    return ListView.builder(
+        itemCount: 10,
+        itemBuilder: (BuildContext context, int index) {
+          return ListTile(
+            splashColor: const Color.fromARGB(255, 179, 172, 172),
+            title: Container(
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey,
+                    offset: const Offset(
+                      3.0,
+                      3.0,
+                    ),
+                    blurRadius: 5.0,
+                    spreadRadius: 1.0,
+                  ), //BoxShadow
+                  BoxShadow(
+                    color: const Color.fromARGB(255, 232, 229, 229),
+                    offset: const Offset(0.0, 0.0),
+                    blurRadius: 0.0,
+                    spreadRadius: 0.0,
+                  ), //BoxShadow
+                ],
+              ),
+              padding: EdgeInsets.all(5),
+              child: Column(
+                children: [
+                  Container(
+                      alignment: Alignment.topLeft,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          SkeletonAnimation(
+                            shimmerColor: Colors.grey,
+                            borderRadius: BorderRadius.circular(20),
+                            shimmerDuration: 500,
+                            child: Container(
+                              color: const Color.fromARGB(255, 208, 200, 200),
+                              child: SizedBox(
+                                height: 60,
+                                width: 60,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: width * 0.30,
+                            height: height * 0.065,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                SkeletonAnimation(
+                                  shimmerColor: Colors.grey,
+                                  borderRadius: BorderRadius.circular(5),
+                                  shimmerDuration: 500,
+                                  child: Container(
+                                    color: const Color.fromARGB(
+                                        255, 208, 200, 200),
+                                    child: SizedBox(
+                                      height: 25,
+                                      width: 100,
+                                    ),
+                                  ),
+                                ),
+                                SkeletonAnimation(
+                                  shimmerColor: Colors.grey,
+                                  borderRadius: BorderRadius.circular(5),
+                                  shimmerDuration: 500,
+                                  child: Container(
+                                    color: const Color.fromARGB(
+                                        255, 208, 200, 200),
+                                    child: SizedBox(
+                                      height: 25,
+                                      width: 100,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SkeletonAnimation(
+                            shimmerColor: Colors.grey,
+                            borderRadius: BorderRadius.circular(5),
+                            shimmerDuration: 500,
+                            child: Container(
+                              color: const Color.fromARGB(255, 208, 200, 200),
+                              child: SizedBox(
+                                height: 30,
+                                width: 60,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            width: width * 0.20,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                SkeletonAnimation(
+                                  shimmerColor: Colors.grey,
+                                  borderRadius: BorderRadius.circular(5),
+                                  shimmerDuration: 500,
+                                  child: Container(
+                                    color: const Color.fromARGB(
+                                        255, 208, 200, 200),
+                                    child: SizedBox(
+                                      height: 30,
+                                      width: 30,
+                                    ),
+                                  ),
+                                ),
+                                SkeletonAnimation(
+                                  shimmerColor: Colors.grey,
+                                  borderRadius: BorderRadius.circular(5),
+                                  shimmerDuration: 500,
+                                  child: Container(
+                                    color: const Color.fromARGB(
+                                        255, 208, 200, 200),
+                                    child: SizedBox(
+                                      height: 30,
+                                      width: 30,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      )),
+                ],
+              ),
+            ),
+            onTap: () {},
+          );
+        });
   }
 }
 

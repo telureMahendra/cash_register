@@ -5,7 +5,6 @@ import 'package:cash_register/helper/printHelper.dart';
 import 'package:cash_register/helper/product.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_esc_pos_utils/flutter_esc_pos_utils.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:math_expressions/math_expressions.dart';
@@ -91,6 +90,9 @@ class _CartsummaryState extends State<Cartsummary> {
       cartProductsList[index].countNumber--;
     } else if (cartProductsList[index].countNumber == 1) {
       cartProductsList.removeAt(index);
+      if (cartProductsList.isEmpty) {
+        Navigator.pop(context);
+      }
     }
     setState(() {});
   }
@@ -133,7 +135,7 @@ class _CartsummaryState extends State<Cartsummary> {
                       const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
                   child: TextFormField(
                     style: const TextStyle(fontSize: 20),
-                    // controller: priceEditContoller,
+                    controller: priceEditContoller,
                     decoration: InputDecoration(
                       prefixIcon: Icon(Icons.money, color: Colors.black54),
                       hintText: 'Product Price',
@@ -190,7 +192,6 @@ class _CartsummaryState extends State<Cartsummary> {
 
   @override
   Widget build(BuildContext context) {
-    print(widget.cartProducts[0].productName);
     size = MediaQuery.of(context).size;
     width = size.width;
     height = size.height;

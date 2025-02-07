@@ -213,7 +213,6 @@ class PrintProductReceipt {
         printer.addPrintLine(textPrintLine)
 
 
-
         textPrintLine.size = TextPrintLine.FONT_NORMAL
         textPrintLine.content = "Thank You!"
         textPrintLine.isBold = true

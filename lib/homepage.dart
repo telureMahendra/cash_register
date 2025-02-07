@@ -126,6 +126,7 @@ class _HomepageState extends State<Homepage> {
     width = size.width;
     height = size.height;
     return Container(
+      height: MediaQuery.of(context).size.height,
       color: Colors.blue,
       child: SafeArea(
           top: false,

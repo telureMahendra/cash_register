@@ -12,15 +12,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
 class EditProduct extends StatefulWidget {
-  CartProduct cartProduct;
-  EditProduct({super.key, required this.cartProduct});
+  // CartProduct cartProduct;
+  ProductDetails productDetails;
+  EditProduct({super.key, required this.productDetails});
 
   @override
   State<EditProduct> createState() => _EditProductState();
 }
 
 class _EditProductState extends State<EditProduct> {
-  late CartProduct product;
+  late ProductDetails product;
   var size, width, height;
   File? galleryFile;
   late File file;
@@ -67,6 +68,22 @@ class _EditProductState extends State<EditProduct> {
     super.initState();
 
     controller = CustomImageCropController();
+    loadProduct();
+  }
+
+  loadProduct() {
+    product = widget.productDetails;
+    print("prodct details ${product.countNumber}");
+    productNameController.text = product.productName;
+    productPriceController.text = product.price;
+    productQuntityeController.text = '${product.qty}';
+    // productQuntityeController.text = int.parse(product.countNumber) ;
+    unitValue = product.measurementUnit;
+    categoryValue = product.productCategory;
+    gstSlab = '${product.gstSlab}%';
+    image = product.image;
+    imageBase64 = image;
+    setState(() {});
   }
 
   @override
@@ -266,7 +283,7 @@ class _EditProductState extends State<EditProduct> {
     return (value / 710) * MediaQuery.of(context).size.height;
   }
 
-  successful() async {
+  successful(String msg) async {
     final prefs = await SharedPreferences.getInstance();
 
     showDialog<void>(
@@ -294,7 +311,7 @@ class _EditProductState extends State<EditProduct> {
                 Container(
                   padding: EdgeInsets.only(bottom: 0),
                   child: Text(
-                    'Product Added',
+                    msg,
                     style: TextStyle(
                       color: Colors.green,
                       fontSize: getadaptiveTextSize(context, 20),
@@ -405,13 +422,17 @@ class _EditProductState extends State<EditProduct> {
             Uri.parse('$BASE_URL/product-update'),
             headers: <String, String>{
               'Content-Type': 'application/json; charset=UTF-8',
-              'userId': '${prefs.getInt('userId')}'
+              'userId': '${prefs.getInt('userId')}',
+              'productId': '${product.id}'
             },
             body: jsonEncode(<String, dynamic>{
-              'id': "",
               'productName': productNameController.text.toString(),
               'price': productPriceController.text.toString(),
               'image': imageBase64,
+              'productCategory': categoryValue,
+              'measurementUnit': unitValue,
+              'gstSlab': gstSlab.substring(0, gstSlab.length - 1),
+              'qty': productQuntityeController.text.toString(),
               'user': {
                 'userId': '${prefs.getInt('userId')}',
               }
@@ -422,7 +443,7 @@ class _EditProductState extends State<EditProduct> {
           if (response.statusCode == 200 || response.statusCode == 201) {
             // If the server did return a 201 CREATED response,
             // then parse the JSON.
-            successful();
+            successful(response.body.toString());
           } else {
             // If the server did not return a 201 CREATED response,
             // then throw an exception.
@@ -553,7 +574,7 @@ class _EditProductState extends State<EditProduct> {
 
   @override
   Widget build(BuildContext context) {
-    product = widget.cartProduct;
+    product = widget.productDetails;
     size = MediaQuery.of(context).size;
     width = size.width;
     height = size.height;

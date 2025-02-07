@@ -57,6 +57,7 @@ dependencies:
   print_bluetooth_thermal: ^1.1.5
   flutter_esc_pos_utils: ^1.0.1
   widgets_to_image: ^1.0.0
+  skeleton_text: ^3.0.1
 
 flutter_icons:
   image_path: "assets/images/logo.png"
