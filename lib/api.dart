@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:cash_register/helper/transaction_helper.dart';
+import 'package:cash_register/model/transaction_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter/src/widgets/placeholder.dart';

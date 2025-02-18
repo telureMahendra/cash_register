@@ -1,4 +1,4 @@
-import 'package:cash_register/helper/printHelper.dart';
+import 'package:cash_register/helper/printe_helper.dart';
 import 'package:cash_register/helper/product.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -66,6 +66,27 @@ class _CalculatoSsummaryState extends State<CalculatorSummary> {
 
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("Summary"),
+      ),
+      body: Center(
+        child: Container(
+          child: Column(
+            children: [
+              Container(
+                child: Text("data 1"),
+              ),
+              Container(
+                child: Text("Data 2"),
+              ),
+              Container(
+                child: Text("data 3"),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

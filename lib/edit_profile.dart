@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:cash_register/Widgets/button.dart';
 import 'package:cash_register/Widgets/text_field.dart';
 import 'package:cash_register/helper/helper.dart';
+import 'package:cash_register/model/environment.dart';
 import 'package:cash_register/profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
@@ -72,7 +73,7 @@ class _EditProfileState extends State<EditProfile> {
         );
 
         final response = await http.put(
-          Uri.parse(BASE_URL + '/update'),
+          Uri.parse('${Environment.baseUrl}/update'),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
             'userId': '${prefs.getInt('userId')}',
@@ -168,8 +169,6 @@ class _EditProfileState extends State<EditProfile> {
     } else {
       print('Form is not valid');
     }
-
-    setState(() {});
   }
 
   @override

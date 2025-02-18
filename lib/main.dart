@@ -1,10 +1,12 @@
-import 'package:cash_register/db/sqfLiteDBService.dart';
-import 'package:cash_register/helper/service/TransactionSyncService.dart';
+import 'package:cash_register/db/sqfLite_db_service.dart';
+import 'package:cash_register/helper/service/transaction_sync_service.dart';
+import 'package:cash_register/model/environment.dart';
 import 'package:cash_register/splash_screen.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
@@ -75,7 +77,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // runApp(const MyApp());
 
-  Workmanager().initialize(
+  await dotenv.load(fileName: Environment.fileName);
+
+  await Workmanager().initialize(
     callbackDispatcher,
     isInDebugMode: true,
   );

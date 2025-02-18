@@ -2,13 +2,18 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:cash_register/db/sqfLiteDBService.dart';
+import 'package:cash_register/db/sqfLite_db_service.dart';
 import 'package:cash_register/helper/helper.dart';
-import 'package:cash_register/helper/transaction_helper.dart';
+import 'package:cash_register/helper/service/transaction_sync_service.dart';
+import 'package:cash_register/model/transaction_helper.dart';
+import 'package:cash_register/model/environment.dart';
+import 'package:cash_register/modules/transaction_history_module/widgets/transaction_summary_card_widget.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/src/widgets/framework.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -52,10 +57,24 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
   //   });
   // }
 
+  int totalTransactionCount = 0;
+  double totalAmount = 0.0;
+  int cashTransactionCount = 0;
+  int upiQrTransactionCount = 0;
+  double cashAmount = 0.0;
+  double upiQrAmount = 0.0;
+
   final dbs = DatabaseService.instance;
   List<Map<String, Object?>>? _billData;
   late StreamSubscription _streamSubscription;
   bool isDeviceConnected = false;
+
+  final inrFormat = NumberFormat.currency(
+    locale: 'hi_IN',
+    name: 'INR',
+    symbol: '₹',
+    decimalDigits: 2,
+  );
 
   internetConnection() =>
       _streamSubscription = Connectivity().onConnectivityChanged.listen(
@@ -88,12 +107,18 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
     return list;
   }
 
+  Future<Box> openTransactionBox() async {
+    await Hive.initFlutter();
+    return await Hive.openBox('transactions');
+  }
+
   Future<List<dynamic>> combineData() async {
-    if (isDeviceConnected) {
-      print("Device connected");
-    } else {
-      print("device is not connected");
-    }
+    var box = await openTransactionBox();
+
+    String currentDate = DateFormat('yMMMd')
+        .format(DateTime.now())
+        .toString(); // Format: "Feb 11, 2025"
+    // Check if the box contains cached data and a date
 
     Future<List> data = _fetchData();
     print("data loaded from the sqlite");
@@ -105,8 +130,28 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
 
     List<dynamic> combinedList = [...list1, ...list2];
 
-    // return combinedList;
-    return sortListByDate(combinedList);
+    List<dynamic> sortedList = sortListByDate(combinedList);
+
+    // if (box.containsKey('transactions') && box.containsKey('lastUpdateDate')) {
+    //   String lastUpdateDate = box.get('lastUpdateDate');
+
+    //   // If the data is for today, return the cached data
+    //   if (lastUpdateDate != currentDate) {
+    //     await box.delete('transactions');
+    //     await box.delete('lastUpdateDate');
+    //   }
+    // }
+
+    // await box.put('transactions', sortedList);
+
+    if (box.containsKey('transactions')) {
+      List<dynamic> cachedData = box.get('transactions');
+      return cachedData; // Return cached data
+    } else {
+      return sortedList; // Return empty if no cached data is available
+    }
+
+    // return sortListByDate(combinedList);
   }
 
   Future<List> fetchTransactionServer() async {
@@ -130,7 +175,7 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
 
     try {
       final response = await http.get(
-        Uri.parse('$BASE_URL/transaction/current-day'),
+        Uri.parse('${Environment.baseUrl}/transaction/current-day'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'userId': '${prefs.getInt('userId')}',
@@ -166,6 +211,50 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
     }
   }
 
+  fetchTransactionsummary() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    try {
+      final response = await http.get(
+        Uri.parse('${Environment.baseUrl}/transaction/summary'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'userId': '${prefs.getInt('userId')}',
+          "date": DateFormat('yMMMd').format(DateTime.now()).toString()
+        },
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () {
+          return http.Response('Error', 408);
+        },
+      );
+
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+        setState(() {
+          totalAmount = data['totalAmount'];
+          totalTransactionCount = data['totalTransactionCount'];
+
+          cashAmount = data['cashAmount'];
+          cashTransactionCount = data['cashTransactionCount'];
+
+          upiQrAmount = data['upiQrAmount'];
+          upiQrTransactionCount = data['upiQrTransactionCount'];
+        });
+      } else {
+        //  return  Text('No transaction data');
+        // Navigator.pop(context);
+        return Text("data");
+        // alertMessage(response.body.toString());
+        // throw Exception('Request Failed.');
+        // return ;
+      }
+    } on SocketException catch (e) {
+      // Navigator.pop(context);
+      print(e);
+    }
+  }
+
   getadaptiveTextSize(BuildContext context, dynamic value) {
     return (value / 710) * MediaQuery.of(context).size.height;
   }
@@ -188,7 +277,7 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
     // );
 
     final response = await http.get(
-      Uri.parse('$BASE_URL/transaction'),
+      Uri.parse('${Environment.baseUrl}/transaction'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
         'userId': '${prefs.getInt('userId')}',
@@ -219,6 +308,7 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
 
     // internetConnection();
     syncStatus();
+    fetchTransactionsummary();
 
     // setState(() {});
   }
@@ -315,6 +405,21 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
     setState(() {});
   }
 
+  Future<void> syncTransaction() async {
+    if (isDeviceConnected) {
+      print("working on syncronization");
+      TransactionSyncService syncService =
+          TransactionSyncService(DatabaseService.instance, databaseHelper: dbs);
+      print("network is available");
+      await syncService.syncTransactions();
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setBool("isSynced", true);
+      setState(() {});
+    } else {
+      print("network error in syncronization");
+    }
+  }
+
   var size, width, height;
 
   var transactionList = [];
@@ -326,6 +431,27 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
     height = size.height;
     return Scaffold(
         appBar: AppBar(
+          actions: [
+            isSynced
+                ? IconButton(
+                    icon: const Icon(
+                      Icons.sync,
+                      color: Colors.white,
+                    ),
+                    tooltip: 'Synced',
+                    onPressed: () {},
+                  )
+                : IconButton(
+                    icon: const Icon(
+                      Icons.sync_problem_rounded,
+                      color: Colors.white,
+                    ),
+                    tooltip: 'Sync',
+                    onPressed: () {
+                      syncTransaction();
+                    },
+                  )
+          ],
           title: Text(
             'Transactions',
             style: TextStyle(color: Colors.white, fontFamily: 'Becham'),
@@ -334,245 +460,258 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
           foregroundColor: Colors.white,
         ),
         body: Center(
-          child: Container(
-            child: Column(
-              children: [
-                isSynced
-                    ? Container(
-                        height: height * 0.030,
-                        color: Colors.green,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.sync),
-                            Text("Transaction Synced")
-                          ],
+          child: Column(
+            children: [
+              // isSynced
+              //     ? Container(
+              //         height: height * 0.030,
+              //         // color: Colors.green,
+              //         child: Row(
+              //           mainAxisAlignment: MainAxisAlignment.center,
+              //           children: [
+              //             Icon(
+              //               Icons.sync,
+              //               color: Colors.green,
+              //             ),
+              //             Text(
+              //               "Transaction Synced",
+              //               style: TextStyle(color: Colors.green),
+              //             )
+              //           ],
+              //         ),
+              //       )
+              //     : Container(
+              //         height: height * 0.030,
+              //         color: Colors.orange,
+              //         child: Row(
+              //           mainAxisAlignment: MainAxisAlignment.center,
+              //           children: [
+              //             Icon(Icons.sync_problem),
+              //             Text("Transaction Not Synced")
+              //           ],
+              //         ),
+              //       ),
+              Container(
+                  padding:
+                      const EdgeInsets.only(left: 8.0, right: 8.0, top: 8.0),
+                  child: Text(
+                    "Today's Transaction Summary",
+                    style: TextStyle(
+                        color: Colors.black,
+                        fontSize: getadaptiveTextSize(context, 15)),
+                  )),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Container(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TransactionSummaryCardWidget(
+                          title: "Total",
+                          amount: totalAmount,
+                          transactionCount: totalTransactionCount),
+                      TransactionSummaryCardWidget(
+                          title: "UPI/QR",
+                          amount: upiQrAmount,
+                          transactionCount: upiQrTransactionCount),
+                      TransactionSummaryCardWidget(
+                          title: "Cash",
+                          amount: cashAmount,
+                          transactionCount: cashTransactionCount)
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                child: FutureBuilder<List>(
+                  future: combineData(),
+                  // future: combineData(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(
+                        // child: CircularProgressIndicator(),
+                        child: buildSkeleton(context),
+                      );
+                    } else if (snapshot.hasError) {
+                      return Center(
+                        child: Text(
+                          'Error: ${snapshot.error}',
+                          style: TextStyle(
+                              color: Colors.red,
+                              fontSize: getadaptiveTextSize(context, 20)),
                         ),
-                      )
-                    : Container(
-                        height: height * 0.030,
-                        color: Colors.orange,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.sync_problem),
-                            Text("Transaction Not Synced")
-                          ],
-                        ),
-                      ),
-                Container(
-                  child: Expanded(
-                    child: FutureBuilder<List>(
-                      future: combineData(),
-                      // future: combineData(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Center(
-                            // child: CircularProgressIndicator(),
-                            child: buildSkeleton(context),
-                          );
-                        } else if (snapshot.hasError) {
-                          return Center(
-                            child: Text(
-                              'Error: ${snapshot.error}',
-                              style: TextStyle(
-                                  color: Colors.red,
-                                  fontSize: getadaptiveTextSize(context, 20)),
-                            ),
-                          ); // Handle error
-                        } else if (!snapshot.hasData) {
-                          return Text("data");
-                        } else if (snapshot.hasData) {
-                          return ListView.builder(
-                            itemCount: snapshot.data!.length,
-                            itemBuilder: (context, index) {
-                              final transaction = snapshot.data![index];
+                      ); // Handle error
+                    } else if (!snapshot.hasData) {
+                      return Text("data");
+                    } else if (snapshot.hasData) {
+                      return ListView.builder(
+                        itemCount: snapshot.data!.length,
+                        itemBuilder: (context, index) {
+                          final transaction = snapshot.data![index];
 
-                              return (Center(
-                                child: Card(
-                                    elevation: 5,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Container(
-                                          height: height * 0.15,
-                                          width: width * 0.90,
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceBetween,
-                                            // crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Container(
-                                                width: width * 0.40,
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.center,
-                                                  children: [
-                                                    Container(
-                                                      width:
-                                                          width - (width / 4),
-                                                      // height: 130,
-                                                      child: Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
-                                                        children: [
-                                                          Container(
-                                                            padding:
-                                                                EdgeInsets.only(
-                                                                    top: 10),
-                                                            child: Text(
-                                                              '+ ${transaction.amount.toString()}',
-                                                              style: TextStyle(
-                                                                fontSize:
-                                                                    getadaptiveTextSize(
-                                                                        context,
-                                                                        15),
-                                                                color: Colors
-                                                                    .green,
-                                                              ),
-                                                            ),
+                          return (Center(
+                            child: Card(
+                                elevation: 5,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: SizedBox(
+                                      height: height * 0.15,
+                                      width: width * 0.90,
+                                      child: Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        // crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          SizedBox(
+                                            width: width * 0.40,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
+                                              children: [
+                                                SizedBox(
+                                                  width: width - (width / 4),
+                                                  // height: 130,
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    children: [
+                                                      Container(
+                                                        padding:
+                                                            EdgeInsets.only(
+                                                                top: 10),
+                                                        child: Text(
+                                                          '+ ${transaction.amount.toString()}',
+                                                          style: TextStyle(
+                                                            fontSize:
+                                                                getadaptiveTextSize(
+                                                                    context,
+                                                                    15),
+                                                            color: Colors.green,
                                                           ),
-                                                        ],
+                                                        ),
                                                       ),
-                                                    ),
-                                                    Container(
-                                                      width:
-                                                          width - (width / 4),
-                                                      height: height * 0.08,
-                                                      padding: EdgeInsets.only(
-                                                          top: 20, left: 26),
-                                                      child: Column(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .start,
-                                                          children: [
-                                                            Text(
-                                                                '${transaction.date.toString()}'),
-                                                            Text(
-                                                                '${transaction.time}')
-                                                          ]),
-                                                    ),
-                                                  ],
+                                                    ],
+                                                  ),
                                                 ),
-                                              ),
-                                              // (transaction.status.toString() ==
-                                              //         1)
-                                              //     ? changeSyncStatus(true)
-                                              //     : changeSyncStatus(false)
+                                                Container(
+                                                  width: width - (width / 4),
+                                                  height: height * 0.08,
+                                                  padding: EdgeInsets.only(
+                                                      top: 20, left: 26),
+                                                  child: Column(
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      children: [
+                                                        Text(transaction.date
+                                                            .toString()),
+                                                        Text(
+                                                            '${transaction.time}')
+                                                      ]),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          // (transaction.status.toString() ==
+                                          //         1)
+                                          //     ? changeSyncStatus(true)
+                                          //     : changeSyncStatus(false)
 
-                                              Column(
+                                          Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceEvenly,
+                                            children: [
+                                              (transaction.tranSource
+                                                          .toString() ==
+                                                      "PRODUCT")
+                                                  ? Icon(
+                                                      Icons.shopping_cart,
+                                                      color: Colors.grey,
+                                                      size: getadaptiveTextSize(
+                                                          context, 30),
+                                                    )
+                                                  : Icon(
+                                                      Icons.calculate,
+                                                      color: Colors.grey,
+                                                      size: getadaptiveTextSize(
+                                                          context, 20),
+                                                    ),
+                                              (transaction.status.toString() ==
+                                                      '1')
+                                                  ? Container(
+                                                      // child: Icon(
+                                                      //   Icons.sync,
+                                                      //   color: Colors.green,
+                                                      //   size:
+                                                      //       getadaptiveTextSize(
+                                                      //           context,
+                                                      //           30),
+                                                      // ),
+                                                      )
+                                                  : Icon(
+                                                      Icons.sync_problem,
+                                                      color: Colors.amber,
+                                                      size: getadaptiveTextSize(
+                                                          context, 30),
+                                                    ),
+                                            ],
+                                          ),
+
+                                          SizedBox(
+
+                                              // width: (width-(width/4)*3),
+                                              width: width * 0.30,
+                                              child: Column(
                                                 mainAxisAlignment:
                                                     MainAxisAlignment
                                                         .spaceEvenly,
                                                 children: [
-                                                  (transaction.tranSource
-                                                              .toString() ==
-                                                          "PRODUCT")
-                                                      ? Container(
-                                                          child: Icon(
-                                                            Icons.shopping_cart,
-                                                            color: Colors.grey,
-                                                            size:
-                                                                getadaptiveTextSize(
-                                                                    context,
-                                                                    30),
-                                                          ),
-                                                        )
-                                                      : Container(
-                                                          child: Icon(
-                                                            Icons.calculate,
-                                                            color: Colors.grey,
-                                                            size:
-                                                                getadaptiveTextSize(
-                                                                    context,
-                                                                    20),
-                                                          ),
-                                                        ),
-                                                  (transaction.status
-                                                              .toString() ==
-                                                          '1')
-                                                      ? Container(
-                                                          // child: Icon(
-                                                          //   Icons.sync,
-                                                          //   color: Colors.green,
-                                                          //   size:
-                                                          //       getadaptiveTextSize(
-                                                          //           context,
-                                                          //           30),
-                                                          // ),
-                                                          )
-                                                      : Container(
-                                                          // color: Colors.amber,
-                                                          child: Icon(
-                                                            Icons.sync_problem,
-                                                            color: Colors.amber,
-                                                            size:
-                                                                getadaptiveTextSize(
-                                                                    context,
-                                                                    30),
-                                                          ),
-                                                        ),
+                                                  if (transaction.method ==
+                                                      "CASH")
+                                                    Icon(
+                                                      Icons.money,
+                                                      size: width * 0.10,
+                                                    ),
+                                                  if (transaction.method !=
+                                                      "CASH")
+                                                    Icon(
+                                                      Icons.qr_code,
+                                                      // size: width * 0.10,
+                                                      size: getadaptiveTextSize(
+                                                          context, 30),
+                                                    ),
+                                                  Text(
+                                                    '${transaction.method}',
+                                                    style: TextStyle(
+                                                        fontSize:
+                                                            getadaptiveTextSize(
+                                                                context, 12)),
+                                                  )
                                                 ],
-                                              ),
-
-                                              Container(
-
-                                                  // width: (width-(width/4)*3),
-                                                  width: width * 0.30,
-                                                  child: Column(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceEvenly,
-                                                    children: [
-                                                      if (transaction.method ==
-                                                          "CASH")
-                                                        Icon(
-                                                          Icons.money,
-                                                          size: width * 0.10,
-                                                        ),
-                                                      if (transaction.method !=
-                                                          "CASH")
-                                                        Icon(
-                                                          Icons.qr_code,
-                                                          // size: width * 0.10,
-                                                          size:
-                                                              getadaptiveTextSize(
-                                                                  context, 30),
-                                                        ),
-                                                      Text(
-                                                        '${transaction.method}',
-                                                        style: TextStyle(
-                                                            fontSize:
-                                                                getadaptiveTextSize(
-                                                                    context,
-                                                                    12)),
-                                                      )
-                                                    ],
-                                                  )),
-                                            ],
-                                          )),
-                                    )),
-                              ));
-                            },
-                          );
-                        } else if (!snapshot.hasData) {
-                          return Center(
-                            child: Text("No Transactions"),
-                          );
-                        } else {
-                          return Text(
-                              'No transaction data'); // Handle empty data case
-                        }
-                      },
-                    ),
-                  ),
-                )
-              ],
-            ),
+                                              )),
+                                        ],
+                                      )),
+                                )),
+                          ));
+                        },
+                      );
+                    } else if (!snapshot.hasData) {
+                      return Center(
+                        child: Text("No Transactions"),
+                      );
+                    } else {
+                      return Text(
+                          'No transaction data'); // Handle empty data case
+                    }
+                  },
+                ),
+              )
+            ],
           ),
         ));
   }
@@ -623,7 +762,7 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
                           //     ),
                           //   ),
                           // ),
-                          Container(
+                          SizedBox(
                             width: width * 0.30,
                             height: height * 0.085,
                             child: Column(

@@ -4,9 +4,10 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:cash_register/helper/helper.dart';
-import 'package:cash_register/homepage.dart';
-import 'package:cash_register/imageCrop.dart';
-import 'package:cash_register/products.dart';
+import 'package:cash_register/home_page.dart';
+import 'package:cash_register/image_crop.dart';
+import 'package:cash_register/model/environment.dart';
+import 'package:cash_register/modules/product_module/products_screen.dart';
 import 'package:custom_image_crop/custom_image_crop.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -210,19 +211,6 @@ class _AddproductState extends State<Addproduct> {
                         icon: const Icon(Icons.rotate_right),
                         onPressed: () => controller
                             .addTransition(CropImageData(angle: pi / 4))),
-                    // IconButton(
-                    //   color: Colors.white,
-                    //   iconSize: getadaptiveTextSize(context, 25),
-                    //   icon: const Icon(Icons.check),
-                    //   onPressed: () async {
-                    //     image = await controller.onCropImage();
-
-                    //     imageBase64 = convertIntoBase64FromMemoryImage(image);
-                    //     setState(() {});
-                    //     Navigator.pop(context);
-                    //     // prefs.noSuchMethod("productImage",image);
-                    //   },
-                    // ),
                   ],
                 ),
               ),
@@ -327,8 +315,6 @@ class _AddproductState extends State<Addproduct> {
                     onPressed: () {
                       Navigator.of(context).pop();
                       Navigator.of(context).pop();
-
-                      setState(() {});
                     },
                   ),
                 ),
@@ -401,8 +387,10 @@ class _AddproductState extends State<Addproduct> {
             },
           );
 
+          print(imageBase64);
+
           final response = await http.post(
-            Uri.parse(BASE_URL + '/product'),
+            Uri.parse('${Environment.baseUrl}/product'),
             headers: <String, String>{
               'Content-Type': 'application/json; charset=UTF-8',
               'userId': '${prefs.getInt('userId')}'

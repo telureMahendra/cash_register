@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:cash_register/helper/helper.dart';
 import 'package:cash_register/helper/product.dart';
+import 'package:cash_register/model/environment.dart';
 import 'package:custom_image_crop/custom_image_crop.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -26,7 +28,7 @@ class _EditProductState extends State<EditProduct> {
   File? galleryFile;
   late File file;
   final picker = ImagePicker();
-  var image, imageBase64;
+  var image, imageBase64 = '';
 
   var units = [
     'gm',
@@ -81,8 +83,7 @@ class _EditProductState extends State<EditProduct> {
     unitValue = product.measurementUnit;
     categoryValue = product.productCategory;
     gstSlab = '${product.gstSlab}%';
-    image = product.image;
-    imageBase64 = image;
+    imageUrlToBase64(product.image);
     setState(() {});
   }
 
@@ -343,8 +344,6 @@ class _EditProductState extends State<EditProduct> {
                     onPressed: () {
                       Navigator.of(context).pop();
                       Navigator.of(context).pop();
-
-                      setState(() {});
                     },
                   ),
                 ),
@@ -354,6 +353,34 @@ class _EditProductState extends State<EditProduct> {
         actions: [],
       ),
     );
+  }
+
+  imageUrlToBase64(String imageUrl) async {
+    try {
+      // Step 1: Fetch the image from the URL
+      final response =
+          await http.get(Uri.parse(Environment.imageBaseUrl + imageUrl));
+
+      // Step 2: If the request was successful (status code 200), convert to Base64
+      if (response.statusCode == 200) {
+        // Convert the image bytes to Base64
+        // print("image is ${response.body}");
+        Uint8List bytes = response.bodyBytes;
+        String base64String = base64Encode(bytes);
+        imageBase64 = await base64String;
+        image = base64String;
+        setState(() {});
+        // print(base64String);
+
+        // Return the Base64 string
+        return base64String;
+      } else {
+        throw Exception('Failed to load image from the URL');
+      }
+    } catch (e) {
+      print('Error: $e');
+      return '';
+    }
   }
 
   void saveProduct() async {
@@ -419,7 +446,7 @@ class _EditProductState extends State<EditProduct> {
           );
 
           final response = await http.put(
-            Uri.parse('$BASE_URL/product-update'),
+            Uri.parse('${Environment.baseUrl}/product-update'),
             headers: <String, String>{
               'Content-Type': 'application/json; charset=UTF-8',
               'userId': '${prefs.getInt('userId')}',

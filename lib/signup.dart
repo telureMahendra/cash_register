@@ -3,7 +3,8 @@ import 'dart:io';
 
 import 'package:cash_register/helper/helper.dart';
 import 'package:cash_register/login.dart';
-import 'package:cash_register/Calculator.dart';
+import 'package:cash_register/calculator.dart';
+import 'package:cash_register/model/environment.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/framework.dart';
@@ -56,7 +57,7 @@ class _SignUpState extends State<SignUp> {
         );
 
         final response = await http.post(
-          Uri.parse(BASE_URL + '/adduser'),
+          Uri.parse('${Environment.baseUrl}/adduser'),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
           },

@@ -1,6 +1,9 @@
 import 'dart:convert';
 
+import 'package:cash_register/common_utils/common_functions.dart';
+import 'package:cash_register/common_utils/strings.dart';
 import 'package:cash_register/helper/product.dart';
+import 'package:cash_register/model/cart_item.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_esc_pos_utils/flutter_esc_pos_utils.dart';
@@ -54,7 +57,7 @@ class Printhelper {
       final profile = await CapabilityProfile.load();
 
       bool isLogoPrint;
-      isLogoPrint = prefs.getBool('isLogoPrint') ?? false;
+      isLogoPrint = prefs.getBool(printLogoSwitchKeyName) ?? false;
 
       final generator = Generator(
           _optionprinttype == "58 mm" ? PaperSize.mm58 : PaperSize.mm80,
@@ -80,6 +83,7 @@ class Printhelper {
         );
 
         await PrintBluetoothThermal.writeBytes(bytes);
+        bytes = [];
       }
       await PrintBluetoothThermal.writeString(
         printText: PrintTextSize(
@@ -87,19 +91,6 @@ class Printhelper {
           text: prefs.getString("businessName") ?? '',
         ),
       );
-      // bytes += PostCode.text(
-      //   text: prefs.getString("businessName") ?? '',
-      //   fontSize: FontSize.big,
-      //   align: AlignPos.center,
-      // );
-      // await PrintBluetoothThermal.writeBytes(bytes);
-      // await PrintBluetoothThermal.writeString(
-      //   printText: PrintTextSize(
-      //     size: 1,
-      //     text: ' ',
-      //   ),
-      // );
-      // await PrintBluetoothThermal.writeBytes(generator.feed(0));
 
       await PrintBluetoothThermal.writeString(
         printText: PrintTextSize(
@@ -261,12 +252,16 @@ class Printhelper {
     print("Device not connected");
   }
 
-  printProductReciept(
-      var payMethod, var recSource, List<CartProduct> products) async {
+  Future<bool> printProductReciept(
+    var payMethod,
+    var recSource,
+  ) async {
     bool connectionStatus = await PrintBluetoothThermal.connectionStatus;
 
     String time = DateFormat('jms').format(DateTime.now()).toString();
     String date = DateFormat('yMMMd').format(DateTime.now()).toString();
+
+    var data = getCartProducts();
 
     if (connectionStatus) {
       print("Device Connected to printer ");
@@ -277,7 +272,7 @@ class Printhelper {
       final profile = await CapabilityProfile.load();
 
       bool isLogoPrint;
-      isLogoPrint = prefs.getBool('isLogoPrint') ?? false;
+      isLogoPrint = prefs.getBool(printLogoSwitchKeyName) ?? false;
 
       final generator = Generator(
           _optionprinttype == "58 mm" ? PaperSize.mm58 : PaperSize.mm80,
@@ -310,13 +305,6 @@ class Printhelper {
           text: prefs.getString("businessName") ?? '',
         ),
       );
-      // await PrintBluetoothThermal.writeString(
-      //   printText: PrintTextSize(
-      //     size: 1,
-      //     text: ' ',
-      //   ),
-      // );
-      // await PrintBluetoothThermal.writeBytes(generator.feed(0));
 
       await PrintBluetoothThermal.writeString(
         printText: PrintTextSize(
@@ -398,12 +386,14 @@ class Printhelper {
         align: AlignPos.center,
       );
 
-      for (CartProduct product in products) {
+      List<CartItem> data = await getCartProducts();
+
+      for (CartItem product in data) {
         var _price = _calculate(product.countNumber, product.price);
         _total += '+$_price';
         bytes += PostCode.text(
           text:
-              '${product.productName}${_addSpace(21 - product.productName.length)}${product.countNumber}${_addSpace(21 - 4 - product.countNumber.toString().length - _price.length)}Rs. ${_price}',
+              '${product.productName}${_addSpace(21 - product.productName.length)}${product.countNumber}${_addSpace(21 - 4 - product.countNumber.toString().length - _price.length)}Rs. $_price',
           fontSize: FontSize.compressed,
           align: AlignPos.center,
         );
@@ -459,7 +449,7 @@ class Printhelper {
         fontSize: FontSize.doubleHeight,
         align: AlignPos.center,
       );
-      _total = '';
+      // _total = '';
       bytes += PostCode.text(
         text: "Note: Goods once sold will not be taken back or exchanged.",
         fontSize: FontSize.compressed,
@@ -476,7 +466,12 @@ class Printhelper {
       bytes += generator.feed(3);
       //bytes += generator.cut();
       await PrintBluetoothThermal.writeBytes(bytes);
+
+      saveTransactionSqlite("CASH", _total, recSource, true);
+      _total = '';
+      return true;
     }
+    return false;
     print("Device not connected");
   }
 

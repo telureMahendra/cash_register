@@ -166,7 +166,7 @@
 //       );
 
 //       final response = await http.post(
-//         Uri.parse('$BASE_URL/transaction'),
+//         Uri.parse('${Environment.baseUrl}/transaction'),
 //         headers: <String, String>{
 //           'Content-Type': 'application/json; charset=UTF-8',
 //           'userId': '${prefs.getInt('userId')}'

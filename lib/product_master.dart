@@ -2,10 +2,12 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:add_to_cart_animation/add_to_cart_animation.dart';
-import 'package:cash_register/addProduct.dart';
+import 'package:cash_register/Widgets/network_image_widget.dart';
+import 'package:cash_register/add_product.dart';
 import 'package:cash_register/edit_product.dart';
 import 'package:cash_register/helper/helper.dart';
 import 'package:cash_register/helper/product.dart';
+import 'package:cash_register/model/environment.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
@@ -38,7 +40,7 @@ class _ProductMasterState extends State<ProductMaster> {
       final prefs = await SharedPreferences.getInstance();
       print(prefs.getInt('userId'));
       final response = await http.get(
-        Uri.parse('$BASE_URL/product'),
+        Uri.parse('${Environment.baseUrl}/product'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'userId': '${prefs.getInt('userId')}',
@@ -86,7 +88,7 @@ class _ProductMasterState extends State<ProductMaster> {
       final prefs = await SharedPreferences.getInstance();
       print(prefs.getInt('userId'));
       final response = await http.delete(
-        Uri.parse('$BASE_URL/product-delete'),
+        Uri.parse('${Environment.baseUrl}/product-delete'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'userId': '${prefs.getInt('userId')}',
@@ -230,8 +232,9 @@ class _ProductMasterState extends State<ProductMaster> {
                           child: TextFormField(
                             // onChanged: searchData(),
                             onChanged: (text) {
-                              searchProduct(text);
-                              setState(() {});
+                              setState(() {
+                                searchProduct(text);
+                              });
                             },
                             style: const TextStyle(fontSize: 20),
                             controller: searchController,
@@ -352,16 +355,32 @@ class _ProductMasterState extends State<ProductMaster> {
                                                     borderRadius:
                                                         BorderRadius.circular(
                                                             10), // Image border
-                                                    child: SizedBox.fromSize(
-                                                      child: Image.memory(
-                                                        Base64Decoder().convert(
-                                                          _productListSearched[
-                                                                  index]
-                                                              .image,
-                                                        ),
-                                                        height: 50,
-                                                        fit: BoxFit.fill,
-                                                      ),
+                                                    // child: SizedBox.fromSize(
+                                                    //   // child: Image.memory(
+                                                    //   //   Base64Decoder().convert(
+                                                    //   //     _productListSearched[
+                                                    //   //             index]
+                                                    //   //         .image,
+                                                    //   //   ),
+                                                    //   //   height: 50,
+                                                    //   //   fit: BoxFit.fill,
+                                                    //   // ),
+                                                    //   // height: 50,
+
+                                                    //   child: Image.network(
+                                                    //     "${Environment.imageBaseUrl}${_productListSearched[index].image}",
+                                                    //     fit: BoxFit.fill,
+                                                    //     height: 50,
+                                                    //   ),
+                                                    // ),
+
+                                                    child: SizedBox(
+                                                      height: 50,
+                                                      child: NetworkImageWidget(
+                                                          image:
+                                                              _productListSearched[
+                                                                      index]
+                                                                  .image),
                                                     ),
                                                   )),
                                                 ),

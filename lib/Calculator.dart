@@ -2,23 +2,25 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:cash_register/addBusinessDetails.dart';
-import 'package:cash_register/api.dart';
-import 'package:cash_register/cartSummary.dart';
-import 'package:cash_register/db/sqfLiteDBService.dart';
-import 'package:cash_register/editBusinessDetails.dart';
-import 'package:cash_register/helper/helper.dart';
-import 'package:cash_register/helper/printHelper.dart';
-import 'package:cash_register/helper/service/TransactionSyncService.dart';
+import 'package:cash_register/Widgets/all_dialog.dart';
+
+import 'package:cash_register/add_business_details.dart';
+import 'package:cash_register/common_utils/assets_path.dart';
+import 'package:cash_register/common_utils/common_functions.dart';
+import 'package:cash_register/common_utils/strings.dart';
+
+import 'package:cash_register/db/sqfLite_db_service.dart';
+
+import 'package:cash_register/helper/printe_helper.dart';
+import 'package:cash_register/helper/service/transaction_sync_service.dart';
 import 'package:cash_register/menu.dart';
+import 'package:cash_register/model/environment.dart';
+import 'package:cash_register/modules/calculator_module/calculator_button_widget.dart';
+import 'package:cash_register/modules/calculator_module/calculator_icon_button_widget.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:cash_register/transactions_history.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_esc_pos_utils/flutter_esc_pos_utils.dart';
-import 'package:flutter_timer_countdown/flutter_timer_countdown.dart';
 import 'package:lottie/lottie.dart';
 import 'package:math_expressions/math_expressions.dart';
 import 'package:flutter/services.dart';
@@ -29,18 +31,13 @@ import 'package:print_bluetooth_thermal/post_code.dart';
 
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 // import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
-import 'package:qr_bar_code/code/src/code_generate.dart';
-import 'package:qr_bar_code/code/src/code_type.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:widgets_to_image/widgets_to_image.dart';
 import 'package:workmanager/workmanager.dart';
-import 'package:workmanager/src/options.dart' as constraints;
 import 'package:flutter_styled_toast/flutter_styled_toast.dart';
 import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
 // import 'package:upi_payment_qrcode_generator/upi_payment_qrcode_generator.dart';
 // import 'package:fluttertoast/fluttertoast.dart';
-import 'package:qr_bar_code/qr_bar_code.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 
 import 'login.dart';
@@ -58,16 +55,16 @@ class _CalculatorState extends State<Calculator> {
   // late final AnimationController _controller;
 
   final dbs = DatabaseService.instance;
-  late Printhelper printhelper = Printhelper();
+  Printhelper printhelper = Printhelper();
 
   String total = '0.0';
   int tempNum = 0;
   String evalString = "0";
-  late bool isLoggedIn = false;
-  late bool isBusinessDetailsFound = false;
-  late bool dataUpdated = false;
+  bool isLoggedIn = false;
+  bool isBusinessDetailsFound = false;
+  bool dataUpdated = false;
 
-  var upiID = '';
+  String upiID = '';
 
   List<Map<String, Object?>>? _billData;
 
@@ -85,7 +82,7 @@ class _CalculatorState extends State<Calculator> {
 
   ScrollController _controller = new ScrollController();
 
-  FocusNode _focusNode = FocusNode();
+  final FocusNode _focusNode = FocusNode();
 
   void scroll(double position) {
     _controller.jumpTo(position);
@@ -135,8 +132,6 @@ class _CalculatorState extends State<Calculator> {
   //   "update info"
   // ];
 
-  String _selectSize = "2";
-  final _txtText = TextEditingController(text: "Hello developer");
   bool _progress = false;
   String _msjprogress = "";
   var conDeviceMac = '', conDeviceName = '';
@@ -534,7 +529,6 @@ class _CalculatorState extends State<Calculator> {
       await syncService.syncTransactions();
       final prefs = await SharedPreferences.getInstance();
       prefs.setBool("isSynced", true);
-      setState(() {});
     } else {
       print("network error in syncronization");
     }
@@ -549,7 +543,7 @@ class _CalculatorState extends State<Calculator> {
     } else {
       prefs.setBool("isSynced", true);
     }
-    setState(() {});
+    // setState(() {});
 
     // print("in sync function");
     // Workmanager()
@@ -578,13 +572,6 @@ class _CalculatorState extends State<Calculator> {
   //   );
   // }
 
-  final inrFormat = NumberFormat.currency(
-    locale: 'hi_IN',
-    name: 'INR',
-    symbol: '₹',
-    decimalDigits: 2,
-  );
-
   Future<void> checkLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     // ignore: unused_local_variable
@@ -603,15 +590,16 @@ class _CalculatorState extends State<Calculator> {
     isBusinessDetailsFound = prefs.getBool('isBusinessDetailsFound') ?? false;
 
     if (isBusinessDetailsFound == false) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return const Center(child: CircularProgressIndicator());
-        },
-      );
+      showLoader(context);
+      // showDialog(
+      //   context: context,
+      //   barrierDismissible: false,
+      //   builder: (BuildContext context) {
+      //     return const Center(child: CircularProgressIndicator());
+      //   },
+      // );
       final response = await http.get(
-        Uri.parse('$BASE_URL/business'),
+        Uri.parse('${Environment.baseUrl}/business'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'userId': '${prefs.getInt('userId')}',
@@ -657,7 +645,7 @@ class _CalculatorState extends State<Calculator> {
         // throw Exception('Request Failed.');
       }
     }
-    setState(() {});
+
     if (isBusinessDetailsFound == false) {
       Navigator.pop(context);
       Navigator.pushReplacement(context,
@@ -689,623 +677,83 @@ class _CalculatorState extends State<Calculator> {
     checkLoggedIn();
     checkBusinessDetailsFound();
     checkPaired();
-
-    setState(() {});
-  }
-
-  @override
-  void dispose() {
-    _streamSubscription.cancel();
-    super.dispose();
-  }
-
-  getadaptiveTextSize(BuildContext context, dynamic value) {
-    return (value / 710) * MediaQuery.of(context).size.height;
   }
 
   Future<void> payBill(
     String method,
   ) async {
     final prefs = await SharedPreferences.getInstance();
-    upiID = prefs.getString("upiID") ?? '';
 
-    // if (isDeviceConnected) {
-
-    setState(() {
-      // var myInt = int.parse(total);
-      // assert(myInt is int);
-      // print("int is ${myInt}");
-
-      if ((total == '0') ||
-          (total == 0) ||
-          total == '0.00' ||
-          (total == 0.00) ||
-          total == '0.0' ||
-          (total == 0.0) ||
-          total == '00' ||
-          (total == 00)) {
-        //
-
-        showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-            content: Container(
-              height: 220,
-              padding: EdgeInsets.all(2),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Lottie.asset('assets/animations/warning.json',
-                      height: MediaQuery.of(context).size.height * 0.17,
-                      // controller: _controller,
-                      repeat: true,
-                      animate: true),
-                  Text(
-                    'Please Enter an Amount',
-                    style:
-                        TextStyle(fontSize: getadaptiveTextSize(context, 15)),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                child: Text(
-                  'Ok',
-                  style: TextStyle(fontSize: getadaptiveTextSize(context, 15)),
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
-        );
+    if (double.parse(total) <= 0) {
+      showSuccessFailDialog(context, warningAnimationPath, pleaseEnterAnAmount);
+    } else {
+      if (method == 'CASH') {
+        saveTransactionSqlite(
+            method, total, printhelper.sourceCalculator, isDeviceConnected);
+        showSuccessfulPaymentDialog(context, total);
+        printhelper.printThermalReciept(
+            method, printhelper.sourceCalculator, evalString);
+        clear();
       } else {
-        if (method == 'CASH') {
-          saveTransactionSqlite(method, total, printhelper.sourceCalculator);
-          // printWidgetToReciept();
-        } else {
-          // internetConnection();
-          if (isDeviceConnected) {
-            upiID = prefs.getString("upiID") ?? '';
-            if (upiID.toString().isNotEmpty ||
-                upiID.trim().isNotEmpty ||
-                upiID.toString() != '') {
-              showDialog<void>(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) => WillPopScope(
-                  onWillPop: _onWillPopDialouge,
-                  child: AlertDialog(
-                    // insetPadding: EdgeInsets.only(bottom: 20),
-                    content: Container(
-                        padding: EdgeInsets.only(bottom: 0),
-                        height: height * 0.79,
-                        width: width,
-                        // color: Colors.amber,
-                        child: Column(
-                          children: [
-                            Container(
-                                // padding: EdgeInsets.only(
-                                //     bottom: height * 0.020, top: 0),
-                                // color: Colors.blue,
-                                child: Center(
-                              child: Column(
-                                children: [
-                                  // UPIPaymentQRCode(
-                                  //   upiDetails: upiDetails,
-                                  //   size: 200,
-                                  // ),
-                                  Container(
-                                    // padding: EdgeInsets.only(
-                                    //     top: height * 0.005,
-                                    //     bottom: height * 0.005),
-                                    child: Text(
-                                      "Complete Your Payment",
-                                      style: TextStyle(
-                                          color: Colors.black,
-                                          fontSize:
-                                              getadaptiveTextSize(context, 13)),
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: EdgeInsets.only(
-                                        top: height * 0.005,
-                                        bottom: height * 0.005),
-                                    child: Text(
-                                      '${inrFormat.format(double.parse(total))}',
-                                      style: TextStyle(
-                                          color: Colors.green,
-                                          fontWeight: FontWeight.w900,
-                                          fontSize:
-                                              getadaptiveTextSize(context, 30)),
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: EdgeInsets.only(
-                                        top: height * 0.005,
-                                        bottom: height * 0.005),
-                                    child: Text(
-                                      '${prefs.getString("businessName")}',
-                                      style: TextStyle(
-                                          color: Colors.black,
-                                          fontWeight: FontWeight.w600,
-                                          fontSize:
-                                              getadaptiveTextSize(context, 20)),
-                                    ),
-                                  ),
-                                  Container(
-                                    padding:
-                                        EdgeInsets.only(bottom: height * 0.005),
-                                    child: Text(
-                                      'Scan and pay using UPI app',
-                                      style: TextStyle(
-                                          color: Colors.black,
-                                          fontSize:
-                                              getadaptiveTextSize(context, 15)),
-                                    ),
-                                  ),
-                                  Code(
-                                    height: height * 0.25,
-                                    data:
-                                        "upi://pay?pa=${prefs.getString("upiID")}&pn=${prefs.getString("businessName")}&mc=0000&tn=Bill%20Payment&am=${double.parse(total)}&cu=INR",
-                                    // "upi://pay?pa=9561051485@axl&pn=Mahendra%20Telure&mc=0000&mode=02&purpose=00&am=10",
-                                    codeType: CodeType.qrCode(),
-                                  ),
-                                  Container(
-                                    padding: EdgeInsets.only(
-                                        top: height * 0.005,
-                                        bottom: height * 0.005),
-                                    child: Text(
-                                      'UPI ID: ${prefs.getString("upiID")}',
-                                      style: TextStyle(
-                                          color: Colors.black,
-                                          fontSize:
-                                              getadaptiveTextSize(context, 15)),
-                                    ),
-                                  ),
-                                  Center(
-                                    child: Container(
-                                        padding: EdgeInsets.all(height * 0.005),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Image.asset(
-                                              "assets/images/bhim_tra.png",
-                                              height: height * 0.02,
-                                            ),
-                                            Image.asset(
-                                              "assets/images/upi_tra.png",
-                                              height: height * 0.02,
-                                            ),
-                                          ],
-                                        )),
-                                  ),
-                                  Center(
-                                    child: Container(
-                                      child: TimerCountdown(
-                                        format:
-                                            // CountDownTimerFormat.secondsOnly,
-                                            CountDownTimerFormat.minutesSeconds,
-                                        endTime: DateTime.now().add(
-                                          Duration(
-                                              minutes: 0,
-                                              seconds: 5,
-                                              microseconds: 20),
-                                        ),
-                                        timeTextStyle: TextStyle(
-                                            fontWeight: FontWeight.w800,
-                                            fontSize: getadaptiveTextSize(
-                                                context, 20)),
-                                        onEnd: () {
-                                          // print("Timer finished");
-                                          showDialog<void>(
-                                            context: context,
-                                            barrierDismissible: false,
-                                            builder: (context) => WillPopScope(
-                                              onWillPop: _onWillPopDialouge,
-                                              child: AlertDialog(
-                                                // title: const Text('Timer Finished'),
-                                                content: Container(
-                                                  height: height * 0.28,
-                                                  width: width * 0.98,
-                                                  child: Column(
-                                                    children: [
-                                                      Lottie.asset(
-                                                          'assets/animations/warning.json',
-                                                          height: MediaQuery.of(
-                                                                      context)
-                                                                  .size
-                                                                  .height *
-                                                              0.17,
-                                                          repeat: true,
-                                                          animate: true),
-                                                      Container(
-                                                        child: Text(
-                                                          "Transaction Timeout!",
-                                                          style: TextStyle(
-                                                              color: Colors.red,
-                                                              fontSize:
-                                                                  getadaptiveTextSize(
-                                                                      context,
-                                                                      15)),
-                                                        ),
-                                                      ),
-                                                      Container(
-                                                        padding:
-                                                            EdgeInsets.only(
-                                                                top: height *
-                                                                    0.020),
-                                                        child: Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .spaceBetween,
-                                                          children: [
-                                                            Container(
-                                                              height: height *
-                                                                  0.050,
-                                                              child:
-                                                                  ElevatedButton(
-                                                                      style: ElevatedButton
-                                                                          .styleFrom(
-                                                                        backgroundColor:
-                                                                            Colors.blue, // background
-                                                                        foregroundColor:
-                                                                            Colors.black, // foreground
-                                                                        padding:
-                                                                            EdgeInsets.all(8),
-                                                                        shape:
-                                                                            RoundedRectangleBorder(
-                                                                          borderRadius:
-                                                                              BorderRadius.circular(6), // <-- Radius
-                                                                        ),
-                                                                      ),
-                                                                      onPressed:
-                                                                          () {
-                                                                        Navigator.of(context)
-                                                                            .pop();
-                                                                        Navigator.of(context)
-                                                                            .pop();
-                                                                        saveTransactionToServer(
-                                                                            method,
-                                                                            total,
-                                                                            printhelper.sourceCalculator);
-                                                                      },
-                                                                      child:
-                                                                          Text(
-                                                                        "Print Receipt",
-                                                                        style: TextStyle(
-                                                                            color:
-                                                                                Colors.white,
-                                                                            fontSize: getadaptiveTextSize(context, 14)),
-                                                                      )),
-                                                            ),
-                                                            Container(
-                                                              height: height *
-                                                                  0.050,
-                                                              child:
-                                                                  OutlinedButton(
-                                                                      style: OutlinedButton
-                                                                          .styleFrom(
-                                                                        // background
-                                                                        foregroundColor:
-                                                                            Colors.black, // foreground
-                                                                        padding:
-                                                                            EdgeInsets.all(8),
-                                                                        shape:
-                                                                            RoundedRectangleBorder(
-                                                                          borderRadius:
-                                                                              BorderRadius.circular(6), // <-- Radius
-                                                                        ),
-                                                                      ),
-                                                                      onPressed:
-                                                                          () {
-                                                                        Navigator.of(context)
-                                                                            .pop();
-                                                                        Navigator.pop(
-                                                                            context);
-                                                                      },
-                                                                      child:
-                                                                          Text(
-                                                                        "Back To Home",
-                                                                        style: TextStyle(
-                                                                            color:
-                                                                                Colors.black,
-                                                                            fontSize: getadaptiveTextSize(context, 14)),
-                                                                      )),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      )
-                                                    ],
-                                                  ),
-                                                ),
-                                                actions: [],
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  )
-                                ],
-                              ),
-                            )),
-                            Center(
-                              child: Padding(
-                                padding: EdgeInsets.only(bottom: height * 0.01),
-                                child: Text(
-                                  "Check Payment Application: If a payment notification is received, print a receipt.",
-                                  style: TextStyle(
-                                    color: Colors.red,
-                                    fontSize: getadaptiveTextSize(context, 12),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Container(
-                              padding: EdgeInsets.only(bottom: 0),
-                              width: width * 0.50,
-                              height: height * 0.05,
-                              child: OutlinedButton(
-                                style: OutlinedButton.styleFrom(
-                                  backgroundColor: Colors.blue, // background
-                                  foregroundColor: Colors.black, // foreground
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(6), // <-- Radius
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.print_outlined,
-                                      size: getadaptiveTextSize(context, 19),
-                                      color: const Color.fromARGB(
-                                          255, 58, 104, 125),
-                                    ),
-                                    Text(
-                                      'Print Receipt',
-                                      style: TextStyle(
-                                          color: Colors.black,
-                                          fontSize:
-                                              getadaptiveTextSize(context, 15)),
-                                    ),
-                                  ],
-                                ),
-                                onPressed: () {
-                                  Navigator.pop(context);
-
-                                  saveTransactionToServer(method, total,
-                                      printhelper.sourceCalculator);
-                                },
-                              ),
-                            ),
-                            Container(
-                              padding: EdgeInsets.all(height * 0.005),
-                            ),
-                            Container(
-                              padding: EdgeInsets.only(bottom: 0),
-                              width: width * 0.50,
-                              height: height * 0.05,
-                              child: OutlinedButton(
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.black, // foreground
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(6), // <-- Radius
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.home_outlined,
-                                      size: getadaptiveTextSize(context, 19),
-                                      color: const Color.fromARGB(
-                                          255, 58, 104, 125),
-                                    ),
-                                    Text(
-                                      'Back To Home',
-                                      style: TextStyle(
-                                          color: Colors.black,
-                                          fontSize:
-                                              getadaptiveTextSize(context, 15)),
-                                    ),
-                                  ],
-                                ),
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  setState(() {});
-                                },
-                              ),
-                            ),
-                          ],
-                        )),
-                    actions: [],
-                  ),
-                ),
-              );
-            } else {
-              showDialog<void>(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) => WillPopScope(
-                  onWillPop: _onWillPopDialouge,
-                  child: AlertDialog(
-                    // title: const Text('Timer Finished'),
-                    content: Container(
-                      height: height * 0.28,
-                      width: width * 0.98,
-                      child: Column(
-                        children: [
-                          Lottie.asset('assets/animations/warning.json',
-                              height: MediaQuery.of(context).size.height * 0.17,
-                              repeat: true,
-                              animate: true),
-                          Container(
-                            child: Text(
-                              "UPI ID Not Found!",
-                              style: TextStyle(
-                                  color: Colors.red,
-                                  fontSize: getadaptiveTextSize(context, 15)),
-                            ),
-                          ),
-                          Container(
-                            padding: EdgeInsets.only(top: height * 0.020),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Container(
-                                  height: height * 0.050,
-                                  child: ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor:
-                                            Colors.blue, // background
-                                        foregroundColor:
-                                            Colors.black, // foreground
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                              6), // <-- Radius
-                                        ),
-                                      ),
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                        // saveTransactionToServer(method);
-                                        Navigator.push(context,
-                                            MaterialPageRoute(
-                                          builder: (context) {
-                                            return const EditBusinessDetails();
-                                          },
-                                        ));
-                                      },
-                                      child: Text(
-                                        "Add UPI ID",
-                                        style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: getadaptiveTextSize(
-                                                context, 14)),
-                                      )),
-                                ),
-                                Container(
-                                  height: height * 0.050,
-                                  child: OutlinedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        // background
-                                        foregroundColor:
-                                            Colors.black, // foreground
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(
-                                              6), // <-- Radius
-                                        ),
-                                      ),
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                      child: Text(
-                                        "Back To Home",
-                                        style: TextStyle(
-                                            color: Colors.black,
-                                            fontSize: getadaptiveTextSize(
-                                                context, 14)),
-                                      )),
-                                ),
-                              ],
-                            ),
-                          )
-                        ],
-                      ),
-                    ),
-                    actions: [],
-                  ),
-                ),
-              );
+        if (true) {
+          upiID = prefs.getString("upiID") ?? '';
+          if (upiID.trim().isNotEmpty) {
+            // showDialog<void>(
+            //   context: context,
+            //   barrierDismissible: false,
+            //   builder: (context) => WillPopScope(
+            //     onWillPop: _onWillPopDialouge,
+            //     child: AlertDialog(
+            //       content: QrCodeWidget(
+            //           amount: total,
+            //           method: method,
+            //           tranSource: printhelper.sourceCalculator,
+            //           isDeviceConnected: isDeviceConnected),
+            //     ),
+            //   ),
+            // );
+            bool status = showQrCodeDialog(context, total, method,
+                printhelper.sourceCalculator, true, evalString);
+            if (status) {
+              clear();
             }
+            // ar duration = const Duration(seconds: 5);
           } else {
-            showDialog<void>(
-              context: context,
-              builder: (context) => AlertDialog(
-                content: Container(
-                  height: 220,
-                  padding: EdgeInsets.all(2),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Lottie.asset('assets/animations/networkError.json',
-                          height: MediaQuery.of(context).size.height * 0.17,
-                          // controller: _controller,
-                          repeat: true,
-                          animate: true),
-                      Text(
-                        'Network Error',
-                        style: TextStyle(
-                            fontSize: getadaptiveTextSize(context, 15)),
-                      ),
-                    ],
-                  ),
-                ),
-                actions: [
-                  TextButton(
-                    child: Text(
-                      'Ok',
-                      style:
-                          TextStyle(fontSize: getadaptiveTextSize(context, 15)),
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                ],
-              ),
-            );
+            showSuccessFailDialog(
+                context, warningAnimationPath, upiIDNotFoundMessage);
           }
+        } else {
+          showSuccessFailDialog(
+              context, warningAnimationPath, networkErrorMessage);
         }
       }
-    });
+    }
+    // });
   }
 
   // sqDemo() {
   // print(dbs.getDBdata());
   // }
 
-  saveTransactionSqlite(String method, String amount, String tranSource) async {
-    String time = DateFormat('jms').format(DateTime.now()).toString();
-    String date = DateFormat('yMMMd').format(DateTime.now()).toString();
-    String amount = inrFormat.format(double.parse(total)).toString();
-    String dateTime =
-        DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()).toString();
-    final prefs = await SharedPreferences.getInstance();
+  // saveTransactionSqlite(String method, String amount, String tranSource) async {
+  //   String time = DateFormat('jms').format(DateTime.now()).toString();
+  //   String date = DateFormat('yMMMd').format(DateTime.now()).toString();
+  //   String amount = inrFormat.format(double.parse(total)).toString();
+  //   String dateTime =
+  //       DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()).toString();
+  //   final prefs = await SharedPreferences.getInstance();
 
-    int userId = prefs.getInt("userId")!;
+  //   int userId = prefs.getInt("userId")!;
 
-    var tran_source = "CALCULATOR";
+  //   var tran_source = "CALCULATOR";
 
-    dbs.saveTransaction(
-        amount, method, time, date, userId, dateTime, 0, tran_source);
-    print("Date stored");
-    successful(method);
+  //   dbs.saveTransaction(
+  //       amount, method, time, date, userId, dateTime, 0, tran_source);
+  //   print("Date stored");
+  //   // successful(method);
+  //   showSuccessfulDialog(context, amount);
+  // }
 
-    // try {
-    //   showDialog(
-    //     context: context,
-    //     barrierDismissible: false,
-    //     builder: (BuildContext context) {
-    //       return Center(
-    //         child: Lottie.asset('assets/animations/loader.json',
-    //             height: MediaQuery.of(context).size.height * 0.17,
-    //             // controller: _controller,
-    //             repeat: true,
-    //             animate: true),
-    //       );
-    //     },
-    //   );
-    // } catch (e) {}
-  }
-
-// Future<http.Response>
   void saveTransactionToServer(
       String method, String amount, String tranSource) async {
     String time = DateFormat('jms').format(DateTime.now()).toString();
@@ -1315,30 +763,11 @@ class _CalculatorState extends State<Calculator> {
         DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()).toString();
     final prefs = await SharedPreferences.getInstance();
 
-    // 'method': method,
-    // 'time': time,
-    // 'date': date,
-    // 'amount': amount,
-    // 'user': {
-    // 'userId': '${prefs.getInt('userId')}',
-
     try {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return Center(
-            child: Lottie.asset('assets/animations/loader.json',
-                height: MediaQuery.of(context).size.height * 0.17,
-                // controller: _controller,
-                repeat: true,
-                animate: true),
-          );
-        },
-      );
+      showLoader(context);
 
       final response = await http.post(
-        Uri.parse(BASE_URL + '/transaction'),
+        Uri.parse('${Environment.baseUrl}/transaction'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
           'userId': '${prefs.getInt('userId')}'
@@ -1361,124 +790,135 @@ class _CalculatorState extends State<Calculator> {
       if (response.statusCode == 200) {
         // If the server did return a 201 CREATED response,
         // then parse the JSON.
-        successful(method);
+        showSuccessfulPaymentDialog(context, total);
+        // successful(method);
       } else {
         // If the server did not return a 201 CREATED response,
         // then throw an exception.
-        showDialog<void>(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            // title: const Text('Error'),
+        showSuccessFailDialog(
+            // ignore: use_build_context_synchronously
+            context,
+            warningAnimationPath,
+            response.body.toString());
 
-            insetPadding: EdgeInsets.all(0),
-            content: Container(
-              height: 220,
-              padding: EdgeInsets.all(2),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Lottie.asset('assets/animations/warning.json',
-                      height: MediaQuery.of(context).size.height * 0.17,
-                      // controller: _controller,
-                      repeat: true,
-                      animate: true),
-                  Text(
-                    '${response.body.toString()}',
-                    style:
-                        TextStyle(fontSize: getadaptiveTextSize(context, 15)),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                style: TextButton.styleFrom(),
-                child: Text(
-                  'Ok',
-                  style: TextStyle(fontSize: getadaptiveTextSize(context, 20)),
-                ),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
-        );
+        // showDialog<void>(
+        //   context: context,
+        //   barrierDismissible: false,
+        //   builder: (context) => AlertDialog(
+        //     // title: const Text('Error'),
+
+        //     insetPadding: EdgeInsets.all(0),
+        //     content: Container(
+        //       height: 220,
+        //       padding: EdgeInsets.all(2),
+        //       child: Column(
+        //         mainAxisSize: MainAxisSize.min,
+        //         children: [
+        //           Lottie.asset('assets/animations/warning.json',
+        //               height: MediaQuery.of(context).size.height * 0.17,
+        //               // controller: _controller,
+        //               repeat: true,
+        //               animate: true),
+        //           Text(
+        //             '${response.body.toString()}',
+        //             style:
+        //                 TextStyle(fontSize: getadaptiveTextSize(context, 15)),
+        //           ),
+        //         ],
+        //       ),
+        //     ),
+        //     actions: [
+        //       TextButton(
+        //         style: TextButton.styleFrom(),
+        //         child: Text(
+        //           'Ok',
+        //           style: TextStyle(fontSize: getadaptiveTextSize(context, 20)),
+        //         ),
+        //         onPressed: () {
+        //           Navigator.of(context).pop();
+        //         },
+        //       ),
+        //     ],
+        //   ),
+        // );
         sleep(Duration(seconds: 1));
       }
     } on SocketException catch (e) {
       // Handle network errors
       Navigator.pop(context);
-      showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-          // title: const Text('Error'),
-          content: Container(
-            height: 220,
-            padding: EdgeInsets.all(2),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Lottie.asset('assets/animations/warning.json',
-                    height: MediaQuery.of(context).size.height * 0.17,
-                    // controller: _controller,
-                    repeat: true,
-                    animate: true),
-                Text(
-                  'Network Error',
-                  style: TextStyle(fontSize: getadaptiveTextSize(context, 15)),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              child: Text('Ok',
-                  style: TextStyle(fontSize: getadaptiveTextSize(context, 15))),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        ),
-      );
+
+      showSuccessFailDialog(context, warningAnimationPath, networkErrorMessage);
+      // showDialog<void>(
+      //   context: context,
+      //   builder: (context) => AlertDialog(
+      //     // title: const Text('Error'),
+      //     content: Container(
+      //       height: 220,
+      //       padding: EdgeInsets.all(2),
+      //       child: Column(
+      //         mainAxisSize: MainAxisSize.min,
+      //         children: [
+      //           Lottie.asset('assets/animations/warning.json',
+      //               height: MediaQuery.of(context).size.height * 0.17,
+      //               // controller: _controller,
+      //               repeat: true,
+      //               animate: true),
+      //           Text(
+      //             'Network Error',
+      //             style: TextStyle(fontSize: getadaptiveTextSize(context, 15)),
+      //           ),
+      //         ],
+      //       ),
+      //     ),
+      //     actions: [
+      //       TextButton(
+      //         child: Text('Ok',
+      //             style: TextStyle(fontSize: getadaptiveTextSize(context, 15))),
+      //         onPressed: () {
+      //           Navigator.of(context).pop();
+      //         },
+      //       ),
+      //     ],
+      //   ),
+      // );
     } catch (e) {
       Navigator.pop(context);
-      showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-          content: Container(
-            height: 220,
-            padding: EdgeInsets.all(2),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Lottie.asset('assets/animations/warning.json',
-                    height: MediaQuery.of(context).size.height * 0.17,
-                    // controller: _controller,
-                    repeat: true,
-                    animate: true),
-                Text(
-                  'Server not Responding',
-                  style: TextStyle(fontSize: getadaptiveTextSize(context, 15)),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              child: Text(
-                'Ok',
-                style: TextStyle(fontSize: getadaptiveTextSize(context, 15)),
-              ),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        ),
-      );
+      showSuccessFailDialog(
+          context, warningAnimationPath, serverNotRespondingMessage);
+      // showDialog<void>(
+      //   context: context,
+      //   builder: (context) => AlertDialog(
+      //     content: Container(
+      //       height: 220,
+      //       padding: EdgeInsets.all(2),
+      //       child: Column(
+      //         mainAxisSize: MainAxisSize.min,
+      //         children: [
+      //           Lottie.asset('assets/animations/warning.json',
+      //               height: MediaQuery.of(context).size.height * 0.17,
+      //               // controller: _controller,
+      //               repeat: true,
+      //               animate: true),
+      //           Text(
+      //             'Server not Responding',
+      //             style: TextStyle(fontSize: getadaptiveTextSize(context, 15)),
+      //           ),
+      //         ],
+      //       ),
+      //     ),
+      //     actions: [
+      //       TextButton(
+      //         child: Text(
+      //           'Ok',
+      //           style: TextStyle(fontSize: getadaptiveTextSize(context, 15)),
+      //         ),
+      //         onPressed: () {
+      //           Navigator.of(context).pop();
+      //         },
+      //       ),
+      //     ],
+      //   ),
+      // );
     }
   }
 
@@ -1502,13 +942,11 @@ class _CalculatorState extends State<Calculator> {
   //   successful();
   // }
 
-  successful(var method) async {
+  successful1(var method) async {
     final prefs = await SharedPreferences.getInstance();
     var recieptSwitch = prefs.getBool("recieptSwitch") ?? false;
 
     if (recieptSwitch) {
-      // printReciept();
-      // printThermalReciept(method, printhelper.sourceCalculator);
       printhelper.printThermalReciept(
           method, printhelper.sourceCalculator, evalString);
     }
@@ -1571,47 +1009,13 @@ class _CalculatorState extends State<Calculator> {
                       ],
                     ),
                     onPressed: () {
-                      evalString = '0';
-                      total = '0';
                       Navigator.of(context).pop();
-                      setState(() {});
                     },
                   ),
                 ),
               ],
             )),
-        actions: [
-          // Center(
-          //   child: Container(
-          //     width: width * 0.51,
-          //     height: height * 0.05,
-          //     child: OutlinedButton(
-          //       style: TextButton.styleFrom(),
-          //       child: const Center(
-          //           child: Row(
-          //         children: [
-          //           Icon(
-          //             Icons.home_filled,
-          //             size: 30,
-          //           ),
-          //           Text(
-          //             'Back To Home',
-          //             style: TextStyle(
-          //               fontSize: 25,
-          //             ),
-          //           ),
-          //         ],
-          //       )),
-          //       onPressed: () {
-          //         evalString = '0';
-          //         total = '0';
-          //         Navigator.of(context).pop();
-          //         setState(() {});
-          //       },
-          //     ),
-          //   ),
-          // ),
-        ],
+        actions: [],
       ),
     );
   }
@@ -1710,6 +1114,7 @@ class _CalculatorState extends State<Calculator> {
 
   // Adding '+' operator in string
   void evaluation() {
+    print("evaluation clicked");
     setState(() {
       if (evalString[evalString.length - 1] != "+") {
         evalString += "+";
@@ -1719,9 +1124,10 @@ class _CalculatorState extends State<Calculator> {
   }
 
   void backSpace() {
+    print("backspace clicked");
     setState(() {
       // evalString.
-      if (evalString != null && evalString.length > 0) {
+      if (evalString.isNotEmpty) {
         evalString = evalString.substring(0, evalString.length - 1);
       }
       if (evalString.isEmpty) {
@@ -1805,7 +1211,6 @@ class _CalculatorState extends State<Calculator> {
                     ),
                     onPressed: () {
                       Navigator.pop(context);
-                      setState(() {});
                     },
                   ),
                 ),
@@ -1855,10 +1260,6 @@ class _CalculatorState extends State<Calculator> {
       evalString = "0";
       total = '00';
     });
-  }
-
-  Future<bool> _onWillPopDialouge() async {
-    return false;
   }
 
   var size, width, height, appBarHeight;
@@ -1929,15 +1330,24 @@ class _CalculatorState extends State<Calculator> {
     size = MediaQuery.of(context).size;
     width = size.width;
     height = size.height;
+    // appBarHeight = AppBar().preferredSize.height;
+    print("height = $height");
+    print("width = $width");
     appBarHeight = AppBar().preferredSize.height;
-    var heightAll = MediaQuery.of(context).padding.top;
+    btnHeight = (height - 337) / 4 - height * 0.033;
+    btnWidth = (width - (width / 4)) / 3 - (width * 0.030);
+
+    // Adjust button height for different devices
+    // if (width < 400) {
+    //   btnHeight = (height - 337) / 4 - height * 0.045;
+    // }
 
     // works on realme 5 pro
-    btnHeight = ((height - 337) / 4) - height * 0.033;
+    // btnHeight = ((height - 337) / 4) - height * 0.033;
 
     // for terminal
     // btnHeight = ((height - 337) / 4) - height * 0.045;
-    btnWidth = ((width - (width / 4)) / 3) - (width * 0.030);
+    // btnWidth = ((width - (width / 4)) / 3) - (width * 0.030);
 
     return WillPopScope(
       onWillPop: _onWillPop,
@@ -2252,7 +1662,7 @@ class _CalculatorState extends State<Calculator> {
                                       child: Focus(
                                         focusNode: _focusNode,
                                         child: Text(
-                                          '$evalString',
+                                          evalString,
                                           overflow: TextOverflow.fade,
                                           style: TextStyle(
                                             color:
@@ -2286,445 +1696,677 @@ class _CalculatorState extends State<Calculator> {
                 ),
 
                 // buttons
-                Center(
-                  child: Container(
-                    // terminal p3000
-                    // height: height * 0.580,
+                // Container(
+                //   // terminal p3000
+                //   // height: height * 0.580,
 
-                    // realme 5 pro
-                    height: height * 0.52,
-                    width: width * 0.95,
-                    // color: Colors.amber,
-                    padding: EdgeInsets.only(
-                      top: height * 0.008,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: width - (width / 4) - width * 0.050,
-                          // width: (width / 4) - width * 0.050,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // 1-3
-                              Container(
-                                width: (width - (width / 4)),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    // button 1
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth,
-                                      child: ElevatedButton(
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
+                //   // realme 5 pro
+                //   height: height * 0.5,
+                //   width: width * 0.95,
+                //   // color: Colors.amber,
+                //   padding: EdgeInsets.only(
+                //     top: height * 0.008,
+                //   ),
+                //   child: Row(
+                //     mainAxisAlignment: MainAxisAlignment.center,
+                //     children: [
+                //       SizedBox(
+                //         width: width - (width / 4) - width * 0.050,
+                //         // width: (width / 4) - width * 0.050,
+                //         child: Column(
+                //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                //           crossAxisAlignment: CrossAxisAlignment.start,
+                //           children: [
+                //             // 1-3
+                //             SizedBox(
+                //               width: (width - (width / 4)),
+                //               child: Row(
+                //                 mainAxisAlignment:
+                //                     MainAxisAlignment.spaceAround,
+                //                 children: [
+                //                   // button 1
+                //                   SizedBox(
+                //                     height: btnHeight,
+                //                     width: btnWidth,
+                //                     child: ElevatedButton(
+                //                       style: ElevatedButton.styleFrom(
+                //                         backgroundColor: Color.fromARGB(
+                //                             255, 236, 233, 232), // background
 
-                                          // backgroundColor: Colors.amber,
-                                          foregroundColor: Colors.black,
+                //                         // backgroundColor: Colors.amber,
+                //                         foregroundColor: Colors.black,
 
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          addition('1');
-                                        },
-                                        child: Text(
-                                          "1",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
-                                        ),
-                                      ),
-                                    ),
+                //                         shape: RoundedRectangleBorder(
+                //                           borderRadius: BorderRadius.circular(
+                //                               12), // <-- Radius
+                //                         ),
+                //                       ),
+                //                       onPressed: () {
+                //                         addition('1');
+                //                       },
+                //                       child: Text(
+                //                         "1",
+                //                         style: TextStyle(
+                //                             fontSize: getadaptiveTextSize(
+                //                                 context, 40)),
+                //                       ),
+                //                     ),
+                //                   ),
 
-                                    // button 2
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "2",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-                                          foregroundColor: Colors.black,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ), // foreground
-                                        ),
-                                        onPressed: () {
-                                          addition('2');
-                                        },
-                                      ),
-                                    ),
+                //                   // button 2
+                //                   SizedBox(
+                //                     height: btnHeight,
+                //                     width: btnWidth,
+                //                     child: ElevatedButton(
+                //                       style: ElevatedButton.styleFrom(
+                //                         backgroundColor: Color.fromARGB(
+                //                             255, 236, 233, 232), // background
+                //                         foregroundColor: Colors.black,
+                //                         shape: RoundedRectangleBorder(
+                //                           borderRadius: BorderRadius.circular(
+                //                               12), // <-- Radius
+                //                         ), // foreground
+                //                       ),
+                //                       onPressed: () {
+                //                         addition('2');
+                //                       },
+                //                       child: Text(
+                //                         "2",
+                //                         style: TextStyle(
+                //                             fontSize: getadaptiveTextSize(
+                //                                 context, 40)),
+                //                       ),
+                //                     ),
+                //                   ),
 
-                                    // button 3
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "3",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-                                          foregroundColor:
-                                              Colors.black, // foreground
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          addition('3');
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                //                   // button 3
+                //                   SizedBox(
+                //                     height: btnHeight,
+                //                     width: btnWidth,
+                //                     child: ElevatedButton(
+                //                       style: ElevatedButton.styleFrom(
+                //                         backgroundColor: Color.fromARGB(
+                //                             255, 236, 233, 232), // background
+                //                         foregroundColor:
+                //                             Colors.black, // foreground
+                //                         shape: RoundedRectangleBorder(
+                //                           borderRadius: BorderRadius.circular(
+                //                               12), // <-- Radius
+                //                         ),
+                //                       ),
+                //                       onPressed: () {
+                //                         addition('3');
+                //                       },
+                //                       child: Text(
+                //                         "3",
+                //                         style: TextStyle(
+                //                             fontSize: getadaptiveTextSize(
+                //                                 context, 40)),
+                //                       ),
+                //                     ),
+                //                   ),
+                //                 ],
+                //               ),
+                //             ),
 
-                              // 4-6
-                              Container(
-                                width: width - (width / 4),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    // button 4
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "4",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-                                          foregroundColor:
-                                              Colors.black, // foreground
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          addition('4');
-                                        },
-                                      ),
-                                    ),
+                //             // 4-6
+                //             SizedBox(
+                //               width: width - (width / 4),
+                //               child: Row(
+                //                 mainAxisAlignment:
+                //                     MainAxisAlignment.spaceAround,
+                //                 children: [
+                //                   // button 4
+                //                   SizedBox(
+                //                     height: btnHeight,
+                //                     width: btnWidth,
+                //                     child: ElevatedButton(
+                //                       style: ElevatedButton.styleFrom(
+                //                         backgroundColor: Color.fromARGB(
+                //                             255, 236, 233, 232), // background
+                //                         foregroundColor:
+                //                             Colors.black, // foreground
+                //                         shape: RoundedRectangleBorder(
+                //                           borderRadius: BorderRadius.circular(
+                //                               12), // <-- Radius
+                //                         ),
+                //                       ),
+                //                       onPressed: () {
+                //                         addition('4');
+                //                       },
+                //                       child: Text(
+                //                         "4",
+                //                         style: TextStyle(
+                //                             fontSize: getadaptiveTextSize(
+                //                                 context, 40)),
+                //                       ),
+                //                     ),
+                //                   ),
 
-                                    // button 5
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "5",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-                                          foregroundColor:
-                                              Colors.black, // foreground
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          addition('5');
-                                        },
-                                      ),
-                                    ),
+                //                   // button 5
+                //                   SizedBox(
+                //                     height: btnHeight,
+                //                     width: btnWidth,
+                //                     child: ElevatedButton(
+                //                       style: ElevatedButton.styleFrom(
+                //                         backgroundColor: Color.fromARGB(
+                //                             255, 236, 233, 232), // background
+                //                         foregroundColor:
+                //                             Colors.black, // foreground
+                //                         shape: RoundedRectangleBorder(
+                //                           borderRadius: BorderRadius.circular(
+                //                               12), // <-- Radius
+                //                         ),
+                //                       ),
+                //                       onPressed: () {
+                //                         addition('5');
+                //                       },
+                //                       child: Text(
+                //                         "5",
+                //                         style: TextStyle(
+                //                             fontSize: getadaptiveTextSize(
+                //                                 context, 40)),
+                //                       ),
+                //                     ),
+                //                   ),
 
-                                    // button 6
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "6",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-                                          foregroundColor:
-                                              Colors.black, // foreground
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          addition('6');
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                //                   // button 6
+                //                   SizedBox(
+                //                     height: btnHeight,
+                //                     width: btnWidth,
+                //                     child: ElevatedButton(
+                //                       style: ElevatedButton.styleFrom(
+                //                         backgroundColor: Color.fromARGB(
+                //                             255, 236, 233, 232), // background
+                //                         foregroundColor:
+                //                             Colors.black, // foreground
+                //                         shape: RoundedRectangleBorder(
+                //                           borderRadius: BorderRadius.circular(
+                //                               12), // <-- Radius
+                //                         ),
+                //                       ),
+                //                       onPressed: () {
+                //                         addition('6');
+                //                       },
+                //                       child: Text(
+                //                         "6",
+                //                         style: TextStyle(
+                //                             fontSize: getadaptiveTextSize(
+                //                                 context, 40)),
+                //                       ),
+                //                     ),
+                //                   ),
+                //                 ],
+                //               ),
+                //             ),
 
-                              // 7-9
-                              Container(
-                                width: width - (width / 4),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    // button 7
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "7",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-                                          foregroundColor:
-                                              Colors.black, // foreground
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          addition('7');
-                                        },
-                                      ),
-                                    ),
+                //             // 7-9
+                //             SizedBox(
+                //               width: width - (width / 4),
+                //               child: Row(
+                //                 mainAxisAlignment:
+                //                     MainAxisAlignment.spaceAround,
+                //                 children: [
+                //                   // button 7
+                //                   Container(
+                //                     height: btnHeight,
+                //                     width: btnWidth,
+                //                     child: ElevatedButton(
+                //                       style: ElevatedButton.styleFrom(
+                //                         backgroundColor: Color.fromARGB(
+                //                             255, 236, 233, 232), // background
+                //                         foregroundColor:
+                //                             Colors.black, // foreground
+                //                         shape: RoundedRectangleBorder(
+                //                           borderRadius: BorderRadius.circular(
+                //                               12), // <-- Radius
+                //                         ),
+                //                       ),
+                //                       onPressed: () {
+                //                         addition('7');
+                //                       },
+                //                       child: Text(
+                //                         "7",
+                //                         style: TextStyle(
+                //                             fontSize: getadaptiveTextSize(
+                //                                 context, 40)),
+                //                       ),
+                //                     ),
+                //                   ),
 
-                                    // button 8
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "8",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-                                          foregroundColor:
-                                              Colors.black, // foreground
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          addition('8');
-                                        },
-                                      ),
-                                    ),
+                //                   // button 8
+                //                   Container(
+                //                     height: btnHeight,
+                //                     width: btnWidth,
+                //                     child: ElevatedButton(
+                //                       style: ElevatedButton.styleFrom(
+                //                         backgroundColor: Color.fromARGB(
+                //                             255, 236, 233, 232), // background
+                //                         foregroundColor:
+                //                             Colors.black, // foreground
+                //                         shape: RoundedRectangleBorder(
+                //                           borderRadius: BorderRadius.circular(
+                //                               12), // <-- Radius
+                //                         ),
+                //                       ),
+                //                       onPressed: () {
+                //                         addition('8');
+                //                       },
+                //                       child: Text(
+                //                         "8",
+                //                         style: TextStyle(
+                //                             fontSize: getadaptiveTextSize(
+                //                                 context, 40)),
+                //                       ),
+                //                     ),
+                //                   ),
 
-                                    // button 9
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "9",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-                                          foregroundColor:
-                                              Colors.black, // foreground
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          addition('9');
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                //                   // button 9
+                //                   Container(
+                //                     height: btnHeight,
+                //                     width: btnWidth,
+                //                     child: ElevatedButton(
+                //                       style: ElevatedButton.styleFrom(
+                //                         backgroundColor: Color.fromARGB(
+                //                             255, 236, 233, 232), // background
+                //                         foregroundColor:
+                //                             Colors.black, // foreground
+                //                         shape: RoundedRectangleBorder(
+                //                           borderRadius: BorderRadius.circular(
+                //                               12), // <-- Radius
+                //                         ),
+                //                       ),
+                //                       onPressed: () {
+                //                         addition('9');
+                //                       },
+                //                       child: Text(
+                //                         "9",
+                //                         style: TextStyle(
+                //                             fontSize: getadaptiveTextSize(
+                //                                 context, 40)),
+                //                       ),
+                //                     ),
+                //                   ),
+                //                 ],
+                //               ),
+                //             ),
 
-                              // clear-0-+
-                              Container(
-                                width: width - (width / 4),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceAround,
-                                  children: [
-                                    // button clear
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "C",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 20)),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-                                          foregroundColor:
-                                              Colors.black, // foreground
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          clear();
-                                        },
-                                      ),
-                                    ),
+                //             // clear-0-+
+                //             SizedBox(
+                //               width: width - (width / 4),
+                //               child: Row(
+                //                 mainAxisAlignment:
+                //                     MainAxisAlignment.spaceAround,
+                //                 children: [
+                //                   // button clear
+                //                   SizedBox(
+                //                     height: btnHeight,
+                //                     width: btnWidth,
+                //                     child: ElevatedButton(
+                //                       style: ElevatedButton.styleFrom(
+                //                         backgroundColor: Color.fromARGB(
+                //                             255, 236, 233, 232), // background
+                //                         foregroundColor:
+                //                             Colors.black, // foreground
+                //                         shape: RoundedRectangleBorder(
+                //                           borderRadius: BorderRadius.circular(
+                //                               12), // <-- Radius
+                //                         ),
+                //                       ),
+                //                       onPressed: () {
+                //                         clear();
+                //                       },
+                //                       child: Text(
+                //                         "C",
+                //                         style: TextStyle(
+                //                             fontSize: getadaptiveTextSize(
+                //                                 context, 20)),
+                //                       ),
+                //                     ),
+                //                   ),
 
-                                    // button 0
-                                    Container(
-                                      height: btnHeight,
-                                      width: btnWidth * 2,
-                                      child: ElevatedButton(
-                                        child: Text(
-                                          "0",
-                                          style: TextStyle(
-                                              fontSize: getadaptiveTextSize(
-                                                  context, 40)),
-                                        ),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Color.fromARGB(
-                                              255, 236, 233, 232), // background
-                                          foregroundColor:
-                                              Colors.black, // foreground
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                                12), // <-- Radius
-                                          ),
-                                        ),
-                                        onPressed: () {
-                                          addition('0');
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Container(
-                          width: (width / 4) - width * 0.010,
-                          height: height - 337,
-                          child: Container(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                // / back button
-                                Container(
-                                  height: btnHeight * 2 + (btnHeight * 0.090),
-                                  width: btnWidth - btnWidth * 0.00005,
-                                  // color: Color.fromARGB(255, 236, 233, 232),
-                                  child: TextButton(
-                                    style: TextButton.styleFrom(
-                                      backgroundColor: Color.fromARGB(
-                                          255, 236, 233, 232), // background
-                                      foregroundColor:
-                                          Colors.black, // foreground
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                            12), // <-- Radius
-                                      ),
-                                    ),
-                                    child: Center(
-                                      child: Icon(
-                                        Icons.arrow_back,
-                                        color: Colors.black,
-                                        size: 50,
-                                      ),
-                                    ),
-                                    onPressed: () {
-                                      backSpace();
-                                    },
-                                  ),
-                                ),
+                //                   // button 0
+                //                   SizedBox(
+                //                     height: btnHeight,
+                //                     width: btnWidth * 2,
+                //                     child: ElevatedButton(
+                //                       style: ElevatedButton.styleFrom(
+                //                         backgroundColor: Color.fromARGB(
+                //                             255, 236, 233, 232), // background
+                //                         foregroundColor:
+                //                             Colors.black, // foreground
+                //                         shape: RoundedRectangleBorder(
+                //                           borderRadius: BorderRadius.circular(
+                //                               12), // <-- Radius
+                //                         ),
+                //                       ),
+                //                       onPressed: () {
+                //                         addition('0');
+                //                       },
+                //                       child: Text(
+                //                         "0",
+                //                         style: TextStyle(
+                //                             fontSize: getadaptiveTextSize(
+                //                                 context, 40)),
+                //                       ),
+                //                     ),
+                //                   ),
+                //                 ],
+                //               ),
+                //             ),
+                //           ],
+                //         ),
+                //       ),
+                //       SizedBox(
+                //         width: (width / 4) - width * 0.010,
+                //         height: height - 337,
+                //         child: Container(
+                //           child: Column(
+                //             mainAxisAlignment: MainAxisAlignment.spaceAround,
+                //             children: [
+                //               // / back button
+                //               SizedBox(
+                //                 height: btnHeight * 2,
+                //                 width: btnWidth - btnWidth * 0.00005,
+                //                 // color: Color.fromARGB(255, 236, 233, 232),
+                //                 child: TextButton(
+                //                   style: TextButton.styleFrom(
+                //                     backgroundColor: Color.fromARGB(
+                //                         255, 236, 233, 232), // background
+                //                     foregroundColor: Colors.black, // foreground
+                //                     shape: RoundedRectangleBorder(
+                //                       borderRadius: BorderRadius.circular(
+                //                           12), // <-- Radius
+                //                     ),
+                //                   ),
+                //                   child: Center(
+                //                     child: Icon(
+                //                       Icons.arrow_back,
+                //                       color: Colors.black,
+                //                       size: 50,
+                //                     ),
+                //                   ),
+                //                   onPressed: () {
+                //                     backSpace();
+                //                   },
+                //                 ),
+                //               ),
 
-                                // button add/addition
-                                Container(
-                                  height: btnHeight * 2 + (btnHeight * 0.090),
-                                  width: btnWidth,
-                                  // color: Color.fromARGB(255, 236, 233, 232),
-                                  child: TextButton(
-                                    style: TextButton.styleFrom(
-                                      backgroundColor: Color.fromARGB(
-                                          255, 236, 233, 232), // background
-                                      foregroundColor:
-                                          Colors.black, // foreground
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                            12), // <-- Radius
-                                      ),
-                                    ),
-                                    child: Icon(
-                                      Icons.add,
-                                      color: Colors.black,
-                                      size: 50,
-                                    ),
-                                    onPressed: () {
-                                      // addition('+');
-                                      evaluation();
-                                    },
-                                  ),
-                                )
-                              ],
-                            ),
-                          ),
-                        )
-                      ],
-                    ),
-                  ),
-                ),
+                //               // button add/addition
+                //               SizedBox(
+                //                 height: btnHeight * 2 + (btnHeight * 0.090),
+                //                 width: btnWidth,
+                //                 // color: Color.fromARGB(255, 236, 233, 232),
+                //                 child: TextButton(
+                //                   style: TextButton.styleFrom(
+                //                     backgroundColor: Color.fromARGB(
+                //                         255, 236, 233, 232), // background
+                //                     foregroundColor: Colors.black, // foreground
+                //                     shape: RoundedRectangleBorder(
+                //                       borderRadius: BorderRadius.circular(
+                //                           12), // <-- Radius
+                //                     ),
+                //                   ),
+                //                   child: Icon(
+                //                     Icons.add,
+                //                     color: Colors.black,
+                //                     size: 50,
+                //                   ),
+                //                   onPressed: () {
+                //                     // addition('+');
+                //                     evaluation();
+                //                   },
+                //                 ),
+                //               )
+                //             ],
+                //           ),
+                //         ),
+                //       )
+                //     ],
+                //   ),
+                // ),
 
                 // Button
+
+                Container(
+                  // height: (height > 1000) ? height * 0.58 : height * 0.5,
+                  height: (height > 1000)
+                      ? (height > 1200)
+                          ? height * 0.59
+                          : height * 0.56
+                      : height * 0.5,
+                  width: width * 0.95,
+                  padding: EdgeInsets.only(top: height * 0.008),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: width - (width / 4) - width * 0.050,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 1-3
+                            SizedBox(
+                              width: width - (width / 4),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                children: [
+                                  // Button 1
+                                  CalculatorButtonWidget(
+                                    buttonText: "1",
+                                    onPressed: () {
+                                      addition('1');
+                                    },
+                                    isWidthDouble: false,
+                                  ),
+                                  // Button 2
+                                  CalculatorButtonWidget(
+                                    buttonText: "2",
+                                    onPressed: () {
+                                      addition('2');
+                                    },
+                                    isWidthDouble: false,
+                                  ),
+                                  // Button 3
+                                  CalculatorButtonWidget(
+                                    buttonText: "3",
+                                    onPressed: () {
+                                      addition('3');
+                                    },
+                                    isWidthDouble: false,
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // 4-6
+                            SizedBox(
+                              width: width - (width / 4),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                children: [
+                                  // Button 4
+
+                                  CalculatorButtonWidget(
+                                    buttonText: "4",
+                                    onPressed: () {
+                                      addition('4');
+                                    },
+                                    isWidthDouble: false,
+                                  ),
+                                  // Button 5
+                                  CalculatorButtonWidget(
+                                    buttonText: "5",
+                                    onPressed: () {
+                                      addition('5');
+                                    },
+                                    isWidthDouble: false,
+                                  ),
+                                  // Button 6
+                                  CalculatorButtonWidget(
+                                    buttonText: "6",
+                                    onPressed: () {
+                                      addition('6');
+                                    },
+                                    isWidthDouble: false,
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // 7-9
+                            SizedBox(
+                              width: width - (width / 4),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                children: [
+                                  // Button 7
+                                  CalculatorButtonWidget(
+                                    buttonText: "7",
+                                    onPressed: () {
+                                      addition('7');
+                                    },
+                                    isWidthDouble: false,
+                                  ),
+                                  // Button 8
+                                  CalculatorButtonWidget(
+                                    buttonText: "8",
+                                    onPressed: () {
+                                      addition('8');
+                                    },
+                                    isWidthDouble: false,
+                                  ),
+                                  // Button 9
+                                  CalculatorButtonWidget(
+                                    buttonText: "9",
+                                    onPressed: () {
+                                      addition('9');
+                                    },
+                                    isWidthDouble: false,
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // clear-0-+
+                            SizedBox(
+                              width: width - (width / 4),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
+                                children: [
+                                  // Button Clear
+                                  CalculatorButtonWidget(
+                                    buttonText: "C",
+                                    onPressed: () {
+                                      clear();
+                                    },
+                                    isWidthDouble: false,
+                                  ),
+                                  // Button 0
+                                  CalculatorButtonWidget(
+                                    buttonText: "0",
+                                    onPressed: () {
+                                      addition('0');
+                                    },
+                                    isWidthDouble: true,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Right Column: Back and Add buttons
+                      SizedBox(
+                        width: (width / 4) - width * 0.010,
+                        height: height - 337,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // / back button
+                            // buildIconButton(Icons.arrow_back, btnHeight * 2,
+                            //     btnWidth - btnWidth * 0.00005, context),
+                            CalculatorIconButtonWidget(
+                                icon: Icons.arrow_back,
+                                onPressed: () {
+                                  backSpace();
+                                }),
+                            // add button
+                            CalculatorIconButtonWidget(
+                                icon: Icons.add,
+                                onPressed: () {
+                                  evaluation();
+                                }),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  // Function to build a button
+  Widget buildButton(
+      BuildContext context, String text, double btnHeight, double btnWidth) {
+    return SizedBox(
+      height: btnHeight,
+      width: btnWidth,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Color.fromARGB(255, 236, 233, 232), // background
+          foregroundColor: Colors.black, // foreground
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12), // Radius
+          ),
+        ),
+        onPressed: () {
+          // Your function to handle button press (e.g., addition)
+        },
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: getadaptiveTextSize(context, 40),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Function to build an icon button (Back or Add)
+  Widget buildIconButton(
+      IconData icon, double height, double width, BuildContext context) {
+    return SizedBox(
+      height: height,
+      width: width,
+      child: TextButton(
+        style: TextButton.styleFrom(
+          backgroundColor: Color.fromARGB(255, 236, 233, 232), // background
+          foregroundColor: Colors.black, // foreground
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12), // Radius
+          ),
+        ),
+        child: Center(
+          child: Icon(
+            icon,
+            color: Colors.black,
+            size: 50,
+          ),
+        ),
+        onPressed: () {
+          // Your function to handle button press (e.g., backSpace or evaluation)
+        },
       ),
     );
   }

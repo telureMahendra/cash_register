@@ -37,7 +37,7 @@ class ProductDetails {
     return ProductDetails(
       id: json['id'],
       productName: json['productName'],
-      image: json['image'],
+      image: json['imageUrl'],
       isSelected: json['isSelected'] ?? false,
       price: json['price'],
       countNumber: json['countNumber'],

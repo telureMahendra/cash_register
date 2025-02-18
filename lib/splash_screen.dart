@@ -1,4 +1,4 @@
-import 'package:cash_register/homepage.dart';
+import 'package:cash_register/home_page.dart';
 import 'package:cash_register/signup.dart';
 import 'package:flutter/material.dart';
 import 'package:animated_splash_screen/animated_splash_screen.dart';
@@ -6,7 +6,7 @@ import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'login.dart';
-import 'Calculator.dart';
+import 'calculator.dart';
 
 class splashScreen extends StatelessWidget {
   final bool loginStatus;

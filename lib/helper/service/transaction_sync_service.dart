@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'dart:ffi';
 import 'dart:io';
 import 'dart:ui';
-import 'package:cash_register/db/sqfLiteDBService.dart';
+import 'package:cash_register/db/sqfLite_db_service.dart';
 import 'package:cash_register/helper/helper.dart';
-import 'package:cash_register/helper/transaction_helper.dart';
+import 'package:cash_register/model/transaction_helper.dart';
+import 'package:cash_register/model/environment.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,7 +31,7 @@ class TransactionSyncService {
     if (await isNetworkAvailable()) {
       if (unsyncedTransactions.isNotEmpty) {
         try {
-          final url = Uri.parse('$BASE_URL/transactionList');
+          final url = Uri.parse('${Environment.baseUrl}/transactionList');
           final response = await http.post(url,
               headers: <String, String>{
                 'Content-Type': 'application/json; charset=UTF-8',

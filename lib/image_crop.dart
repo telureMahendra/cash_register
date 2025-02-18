@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:cash_register/common_utils/common_functions.dart';
 import 'package:flutter/material.dart';
 import 'package:custom_image_crop/custom_image_crop.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,10 +31,6 @@ class _CropImageState extends State<CropImage> {
   void dispose() {
     controller.dispose();
     super.dispose();
-  }
-
-  getadaptiveTextSize(BuildContext context, dynamic value) {
-    return (value / 710) * MediaQuery.of(context).size.height;
   }
 
   loadImage() async {

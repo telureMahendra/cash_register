@@ -2,8 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:cash_register/helper/helper.dart';
-import 'package:cash_register/Calculator.dart';
-import 'package:cash_register/homepage.dart';
+import 'package:cash_register/calculator.dart';
+import 'package:cash_register/home_page.dart';
+import 'package:cash_register/model/environment.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -39,7 +40,6 @@ class _SignupScreenState extends State<LoginScreen> {
   Future<void> saveLoginStatus(bool isLoggedIn) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', isLoggedIn);
-    setState(() {});
   }
 
 // email and passowrd auth part
@@ -87,7 +87,7 @@ class _SignupScreenState extends State<LoginScreen> {
         );
 
         final response = await http.post(
-          Uri.parse(BASE_URL + '/user/login'),
+          Uri.parse('${Environment.baseUrl}/user/login'),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
           },
