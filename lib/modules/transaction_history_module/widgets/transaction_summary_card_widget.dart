@@ -31,7 +31,7 @@ class TransactionSummaryCardWidget extends StatelessWidget {
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: getadaptiveTextSize(context, 10),
+                  fontSize: getAdaptiveTextSize(context, 10),
                   color: Colors.black,
                   fontWeight: FontWeight.bold,
                 ),
@@ -41,7 +41,7 @@ class TransactionSummaryCardWidget extends StatelessWidget {
                 inrFormat.format(double.parse(amount.toString())),
 
                 style: TextStyle(
-                    fontSize: getadaptiveTextSize(context, 13),
+                    fontSize: getAdaptiveTextSize(context, 13),
                     color: Colors.green,
                     fontWeight: FontWeight.bold),
               ),
@@ -50,7 +50,7 @@ class TransactionSummaryCardWidget extends StatelessWidget {
                 '$transactionCount Transactions',
 
                 style: TextStyle(
-                  fontSize: getadaptiveTextSize(context, 13),
+                  fontSize: getAdaptiveTextSize(context, 13),
                   color: Colors.black87,
                 ),
               ),

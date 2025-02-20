@@ -22,7 +22,7 @@ void showSuccessFailDialog(
                 animate: true),
             Text(
               message,
-              style: TextStyle(fontSize: getadaptiveTextSize(context, 15)),
+              style: TextStyle(fontSize: getAdaptiveTextSize(context, 15)),
             ),
           ],
         ),
@@ -31,7 +31,7 @@ void showSuccessFailDialog(
         TextButton(
           child: Text(
             'Ok',
-            style: TextStyle(fontSize: getadaptiveTextSize(context, 15)),
+            style: TextStyle(fontSize: getAdaptiveTextSize(context, 15)),
           ),
           onPressed: () {
             Navigator.of(context).pop();
@@ -42,7 +42,8 @@ void showSuccessFailDialog(
   );
 }
 
-showSuccessfulPaymentDialog(BuildContext context, String amount) async {
+showSuccessfulPaymentDialog(BuildContext context, String amount,
+    bool isFromProductsScreen, bool isFromQrCode) async {
   Size size = MediaQuery.of(context).size;
   double width = size.width;
   double height = size.height;
@@ -73,7 +74,7 @@ showSuccessfulPaymentDialog(BuildContext context, String amount) async {
                 'Payment Successful',
                 style: TextStyle(
                   color: Colors.green,
-                  fontSize: getadaptiveTextSize(context, 20),
+                  fontSize: getAdaptiveTextSize(context, 20),
                 ),
               ),
             ),
@@ -84,7 +85,7 @@ showSuccessfulPaymentDialog(BuildContext context, String amount) async {
                 // amount,
                 style: TextStyle(
                   color: Colors.black,
-                  fontSize: getadaptiveTextSize(context, 30),
+                  fontSize: getAdaptiveTextSize(context, 30),
                 ),
               ),
             ),
@@ -99,19 +100,36 @@ showSuccessfulPaymentDialog(BuildContext context, String amount) async {
                   children: [
                     Icon(
                       Icons.home_outlined,
-                      size: getadaptiveTextSize(context, 19),
+                      size: getAdaptiveTextSize(context, 19),
                       color: const Color.fromARGB(255, 58, 104, 125),
                     ),
                     Text(
                       'Back To Home',
                       style: TextStyle(
                           color: Colors.black,
-                          fontSize: getadaptiveTextSize(context, 15)),
+                          fontSize: getAdaptiveTextSize(context, 15)),
                     ),
                   ],
                 ),
                 onPressed: () {
-                  Navigator.of(context).pop();
+                  print("from product screen $isFromProductsScreen");
+                  if (isFromProductsScreen) {
+                    Navigator.of(context).pop();
+                    // Navigator.of(context).pop();
+                    // deleteAllProducts(
+                    //     context, isFromProductsScreen, isFromQrCode);
+
+                    clearCart();
+
+                    while (Navigator.canPop(context)) {
+                      Navigator.pop(context);
+                    }
+                    // if (isFromQrCode) {
+                    //   clearCart(context);
+                    // }
+                  } else {
+                    Navigator.of(context).pop();
+                  }
                 },
               ),
             ),
@@ -190,7 +208,7 @@ Future<bool?> showBackDialog(BuildContext context) async {
       title: new Text('Are you sure?'),
       content: new Text(
         'Do you want to exit an App',
-        style: TextStyle(fontSize: getadaptiveTextSize(context, 18)),
+        style: TextStyle(fontSize: getAdaptiveTextSize(context, 18)),
       ),
       actions: <Widget>[
         Row(
@@ -212,7 +230,7 @@ Future<bool?> showBackDialog(BuildContext context) async {
                     Navigator.pop(context, false),
                 child: new Text(
                   'No',
-                  style: TextStyle(fontSize: getadaptiveTextSize(context, 15)),
+                  style: TextStyle(fontSize: getAdaptiveTextSize(context, 15)),
                 ),
               ),
             ),
@@ -230,7 +248,7 @@ Future<bool?> showBackDialog(BuildContext context) async {
                 // Navigator.of(context).pop(true), // <-- SEE HERE
                 child: Text(
                   'Yes',
-                  style: TextStyle(fontSize: getadaptiveTextSize(context, 15)),
+                  style: TextStyle(fontSize: getAdaptiveTextSize(context, 15)),
                 ),
               ),
             ),

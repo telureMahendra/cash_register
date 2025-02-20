@@ -138,6 +138,7 @@ class Printhelper {
       //     align: AlignPos.center);
 
       var invCalCounter = prefs.getInt("invCalCounter") ?? 1;
+
       var invProdCounter = prefs.getInt("invProdCounter") ?? 1;
 
       bytes += generator.feed(1);
@@ -467,12 +468,12 @@ class Printhelper {
       //bytes += generator.cut();
       await PrintBluetoothThermal.writeBytes(bytes);
 
-      saveTransactionSqlite("CASH", _total, recSource, true);
-      _total = '';
       return true;
     }
+    // await dbs.getCartTotal()
+    // saveTransactionSqlite("CASH", _total, recSource, true);
+    _total = '';
     return false;
-    print("Device not connected");
   }
 
   String _calculate(var count, var price) {

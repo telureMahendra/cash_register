@@ -64,7 +64,7 @@ class _CupertinoSwitchWidgetState extends State<CupertinoSwitchWidget> {
                   Text(
                     widget.btnName,
                     style: TextStyle(
-                        fontSize: getadaptiveTextSize(context, 15),
+                        fontSize: getAdaptiveTextSize(context, 15),
                         fontWeight: FontWeight.bold),
                   ),
                   CupertinoSwitch(

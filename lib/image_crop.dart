@@ -83,36 +83,36 @@ class _CropImageState extends State<CropImage> {
               children: [
                 IconButton(
                     color: Colors.white,
-                    iconSize: getadaptiveTextSize(context, 25),
+                    iconSize: getAdaptiveTextSize(context, 25),
                     icon: const Icon(Icons.refresh),
                     onPressed: controller.reset),
                 IconButton(
                     color: Colors.white,
-                    iconSize: getadaptiveTextSize(context, 25),
+                    iconSize: getAdaptiveTextSize(context, 25),
                     icon: const Icon(Icons.zoom_in),
                     onPressed: () =>
                         controller.addTransition(CropImageData(scale: 1.33))),
                 IconButton(
                     color: Colors.white,
-                    iconSize: getadaptiveTextSize(context, 25),
+                    iconSize: getAdaptiveTextSize(context, 25),
                     icon: const Icon(Icons.zoom_out),
                     onPressed: () =>
                         controller.addTransition(CropImageData(scale: 0.75))),
                 IconButton(
                     color: Colors.white,
-                    iconSize: getadaptiveTextSize(context, 25),
+                    iconSize: getAdaptiveTextSize(context, 25),
                     icon: const Icon(Icons.rotate_left),
                     onPressed: () => controller
                         .addTransition(CropImageData(angle: -pi / 4))),
                 IconButton(
                     color: Colors.white,
-                    iconSize: getadaptiveTextSize(context, 25),
+                    iconSize: getAdaptiveTextSize(context, 25),
                     icon: const Icon(Icons.rotate_right),
                     onPressed: () =>
                         controller.addTransition(CropImageData(angle: pi / 4))),
                 IconButton(
                   color: Colors.white,
-                  iconSize: getadaptiveTextSize(context, 25),
+                  iconSize: getAdaptiveTextSize(context, 25),
                   icon: const Icon(Icons.crop),
                   onPressed: () async {
                     final image = await controller.onCropImage();

@@ -67,7 +67,7 @@ class _UsernameCardWidgetState extends State<UsernameCardWidget> {
                   username != null && username.isNotEmpty ? username[0] : '0',
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: getadaptiveTextSize(context, 50)),
+                      fontSize: getAdaptiveTextSize(context, 50)),
                 ),
               ),
               widget.isEditShow == true
@@ -78,7 +78,7 @@ class _UsernameCardWidgetState extends State<UsernameCardWidget> {
                         '$username ',
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: getadaptiveTextSize(context, 18)),
+                            fontSize: getAdaptiveTextSize(context, 18)),
                       ),
                     )
                   : SizedBox(
@@ -88,7 +88,7 @@ class _UsernameCardWidgetState extends State<UsernameCardWidget> {
                         '$username ',
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: getadaptiveTextSize(context, 18)),
+                            fontSize: getAdaptiveTextSize(context, 18)),
                       ),
                     ),
               widget.isEditShow == true

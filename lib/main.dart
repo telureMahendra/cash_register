@@ -1,5 +1,6 @@
 import 'package:cash_register/db/sqfLite_db_service.dart';
 import 'package:cash_register/helper/service/transaction_sync_service.dart';
+import 'package:cash_register/home_page.dart';
 import 'package:cash_register/model/environment.dart';
 import 'package:cash_register/splash_screen.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -11,8 +12,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:workmanager/src/options.dart' as constraints;
-
-var dbs;
 
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
@@ -71,7 +70,6 @@ Future<void> main() async {
 
   final prefs = await SharedPreferences.getInstance();
   final bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-  dbs = DatabaseService.instance;
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   WidgetsFlutterBinding.ensureInitialized();
@@ -94,7 +92,9 @@ Future<bool> isNetworkAvailable() async {
 
 class ScheduledTask {
   static const String taskName = "syncTransactionsTask";
+
   static Future<void> control() async {
+    DatabaseService dbs = DatabaseService.instance;
     if (await isNetworkAvailable()) {
       TransactionSyncService syncService =
           TransactionSyncService(DatabaseService.instance, databaseHelper: dbs);

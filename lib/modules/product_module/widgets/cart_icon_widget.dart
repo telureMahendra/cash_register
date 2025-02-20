@@ -68,8 +68,8 @@ class _CartIconWidgetState extends State<CartIconWidget> {
               child: Padding(
                 padding: EdgeInsets.only(bottom: 80),
                 child: SizedBox(
-                  height: 90,
-                  width: 90,
+                  height: height * 0.09,
+                  width: height * 0.09,
                   child: FloatingActionButton(
                     isExtended: true,
                     backgroundColor: Colors.blueAccent,
@@ -79,41 +79,53 @@ class _CartIconWidgetState extends State<CartIconWidget> {
                         return Cartsummary();
                       }));
                     },
-                    child: Stack(children: [
-                      AddToCartIcon(
-                        key: cartKey,
-                        // leading: ,
+                    child: Center(
+                      child: Stack(children: [
+                        Container(
+                          alignment: Alignment.center,
+                          child: Icon(
+                            Icons.shopping_cart,
+                            size: getAdaptiveTextSize(context, 50),
+                            color: Colors.white,
+                          ),
+                        ),
+                        // AddToCartIcon(
+                        //   key: cartKey,
+                        //   // leading: ,
 
-                        icon: Icon(
-                          Icons.shopping_cart,
-                          size: getadaptiveTextSize(context, 50),
-                          color: Colors.white,
+                        //   icon: Container(
+                        //     child: Icon(
+                        //       Icons.shopping_cart,
+                        //       size: getadaptiveTextSize(context, 50),
+                        //       color: Colors.white,
+                        //     ),
+                        //   ),
+                        //   badgeOptions: BadgeOptions(
+                        //     height: 30,
+                        //     width: 30,
+                        //     active: false,
+                        //     backgroundColor: Colors.red,
+                        //     fontSize: getadaptiveTextSize(context, 15),
+                        //   ),
+                        // ),
+                        Container(
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Text(
+                                '${snapshot.data}',
+                                style: TextStyle(
+                                    fontSize: getAdaptiveTextSize(context, 20),
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ],
+                          ),
                         ),
-                        badgeOptions: BadgeOptions(
-                          height: 30,
-                          width: 30,
-                          active: false,
-                          backgroundColor: Colors.red,
-                          fontSize: getadaptiveTextSize(context, 15),
-                        ),
-                      ),
-                      Container(
-                        alignment: Alignment.center,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              '${snapshot.data}',
-                              style: TextStyle(
-                                  fontSize: getadaptiveTextSize(context, 20),
-                                  color: Colors.red,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ]),
+                      ]),
+                    ),
                   ),
                 ),
               ),

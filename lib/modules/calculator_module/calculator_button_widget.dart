@@ -41,7 +41,7 @@ class CalculatorButtonWidget extends StatelessWidget {
         child: Text(
           buttonText,
           style: TextStyle(
-            fontSize: getadaptiveTextSize(context, 40),
+            fontSize: getAdaptiveTextSize(context, 40),
           ),
         ),
       ),

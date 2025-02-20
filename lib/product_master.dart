@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:add_to_cart_animation/add_to_cart_animation.dart';
 import 'package:cash_register/Widgets/network_image_widget.dart';
 import 'package:cash_register/add_product.dart';
+import 'package:cash_register/common_utils/common_functions.dart';
 import 'package:cash_register/edit_product.dart';
 import 'package:cash_register/helper/helper.dart';
 import 'package:cash_register/helper/product.dart';
@@ -31,9 +32,6 @@ class _ProductMasterState extends State<ProductMaster> {
   List<CartProduct> cartProducts = [];
 
   bool _isLoading = true;
-  getadaptiveTextSize(BuildContext context, dynamic value) {
-    return (value / 710) * MediaQuery.of(context).size.height;
-  }
 
   Future<void> _fetchProducts() async {
     try {
@@ -165,22 +163,6 @@ class _ProductMasterState extends State<ProductMaster> {
         ),
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
-        // actions: [
-        //   IconButton(
-        //     icon: const Icon(
-        //       Icons.store_outlined,
-        //       color: Colors.white,
-        //     ),
-        //     tooltip: 'Add Product',
-        //     onPressed: () {
-        //       Navigator.push(context, MaterialPageRoute(
-        //         builder: (context) {
-        //           return Addproduct();
-        //         },
-        //       ));
-        //     },
-        //   ),
-        // ],
       ),
       // floatingActionButtonLocation: FloatingActionButtonLocation.endTop,
       floatingActionButton: Padding(
@@ -194,7 +176,7 @@ class _ProductMasterState extends State<ProductMaster> {
             icon: Icon(
               Icons.add,
               color: Colors.black,
-              size: getadaptiveTextSize(context, 30),
+              size: getAdaptiveTextSize(context, 30),
             ),
             tooltip: 'Add Product',
             onPressed: () {
@@ -397,7 +379,7 @@ class _ProductMasterState extends State<ProductMaster> {
                                                             .productName,
                                                         style: TextStyle(
                                                             fontSize:
-                                                                getadaptiveTextSize(
+                                                                getAdaptiveTextSize(
                                                                     context,
                                                                     15),
                                                             fontWeight:
@@ -412,7 +394,7 @@ class _ProductMasterState extends State<ProductMaster> {
                                                                     .price)),
                                                         style: TextStyle(
                                                           fontSize:
-                                                              getadaptiveTextSize(
+                                                              getAdaptiveTextSize(
                                                                   context, 15),
                                                         ),
                                                       ),
@@ -426,7 +408,7 @@ class _ProductMasterState extends State<ProductMaster> {
                                                         '${_productListSearched[index].qty}',
                                                         style: TextStyle(
                                                           fontSize:
-                                                              getadaptiveTextSize(
+                                                              getAdaptiveTextSize(
                                                                   context, 12),
                                                         ),
                                                       ),
@@ -436,7 +418,7 @@ class _ProductMasterState extends State<ProductMaster> {
                                                             .measurementUnit,
                                                         style: TextStyle(
                                                           fontSize:
-                                                              getadaptiveTextSize(
+                                                              getAdaptiveTextSize(
                                                                   context, 12),
                                                         ),
                                                       )
@@ -454,7 +436,7 @@ class _ProductMasterState extends State<ProductMaster> {
                                                           Icons.edit,
                                                           color: Colors.black,
                                                           size:
-                                                              getadaptiveTextSize(
+                                                              getAdaptiveTextSize(
                                                                   context, 20),
                                                         ),
                                                         tooltip: 'Edit Product',
@@ -477,7 +459,7 @@ class _ProductMasterState extends State<ProductMaster> {
                                                           Icons.delete,
                                                           color: Colors.black,
                                                           size:
-                                                              getadaptiveTextSize(
+                                                              getAdaptiveTextSize(
                                                                   context, 30),
                                                         ),
                                                         tooltip:

@@ -74,14 +74,14 @@ class _HomepageState extends State<Homepage> {
     var icons = <Widget>[
       if (isProductEnabled)
         Icon(Icons.inventory_outlined,
-            size: getadaptiveTextSize(context, 30), color: Colors.white),
+            size: getAdaptiveTextSize(context, 30), color: Colors.white),
       if (isCalculatorEnabled)
         Icon(Icons.calculate_outlined,
-            size: getadaptiveTextSize(context, 30), color: Colors.white),
+            size: getAdaptiveTextSize(context, 30), color: Colors.white),
       Icon(Icons.history,
-          size: getadaptiveTextSize(context, 30), color: Colors.white),
+          size: getAdaptiveTextSize(context, 30), color: Colors.white),
       Icon(Icons.person_2_outlined,
-          size: getadaptiveTextSize(context, 30), color: Colors.white),
+          size: getAdaptiveTextSize(context, 30), color: Colors.white),
     ];
     size = MediaQuery.of(context).size;
     width = size.width;

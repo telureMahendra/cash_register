@@ -63,7 +63,7 @@ class _ProfileListTileWidgetState extends State<ProfileListTileWidget> {
                     Text(
                       widget.title,
                       style: TextStyle(
-                          fontSize: getadaptiveTextSize(context, 15),
+                          fontSize: getAdaptiveTextSize(context, 15),
                           fontWeight: FontWeight.bold),
                     ),
                   ],

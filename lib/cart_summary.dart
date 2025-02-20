@@ -1,11 +1,13 @@
 import 'dart:typed_data';
 
+import 'package:cash_register/Widgets/all_dialog.dart';
 import 'package:cash_register/Widgets/cart_item_widget.dart';
 import 'package:cash_register/common_utils/common_functions.dart';
 import 'package:cash_register/db/sqfLite_db_service.dart';
 import 'package:cash_register/helper/printe_helper.dart';
 import 'package:cash_register/helper/product.dart';
 import 'package:cash_register/helper/stream_helper.dart';
+import 'package:cash_register/main.dart';
 import 'package:cash_register/model/cart_item.dart';
 import 'package:cash_register/modules/cart_summary_module/product_final_amount_widget.dart';
 import 'package:flutter/material.dart';
@@ -25,10 +27,6 @@ class Cartsummary extends StatefulWidget {
 
 class _CartsummaryState extends State<Cartsummary> {
   var size, width, height;
-
-  getadaptiveTextSize(BuildContext context, dynamic value) {
-    return (value / 710) * MediaQuery.of(context).size.height;
-  }
 
   WidgetsToImageController widgetsToImageController =
       WidgetsToImageController();
@@ -51,6 +49,7 @@ class _CartsummaryState extends State<Cartsummary> {
   Parser p = Parser();
   late Printhelper printhelper = Printhelper();
   List<CartProduct> cartProducts = [];
+  final dbs = DatabaseService.instance;
   @override
   void initState() {
     final dbs = DatabaseService.instance;
@@ -74,7 +73,7 @@ class _CartsummaryState extends State<Cartsummary> {
         child: AlertDialog(
           // title: const Text('Timer Finished'),
           content: Container(
-            height: height * 0.28,
+            height: height * 0.35,
             width: width * 0.98,
             child: Column(
               children: [
@@ -88,7 +87,7 @@ class _CartsummaryState extends State<Cartsummary> {
                           },
                           child: Icon(
                             Icons.close,
-                            size: getadaptiveTextSize(context, 20),
+                            size: getAdaptiveTextSize(context, 20),
                           ))
                     ],
                   ),
@@ -122,6 +121,16 @@ class _CartsummaryState extends State<Cartsummary> {
                       ),
                     ),
                     keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Price Should not be empty!';
+                      }
+                      if (value.length < 6) {
+                        return 'Please enter valid price';
+                      }
+
+                      return null;
+                    },
                     // obscureText: _obscureText,
                     // autovalidateMode: AutovalidateMode.onUserInteraction,
                   ),
@@ -150,11 +159,14 @@ class _CartsummaryState extends State<Cartsummary> {
     return '${exp.evaluate(EvaluationType.REAL, cm)}';
   }
 
-  printReciept() async {
+  printReciept(String method) async {
     printhelper
         .printProductReciept("CASH", printhelper.sourceProduct)
-        .then((_) {
-      deleteAllProducts(context);
+        .then((_) async {
+      saveTransactionSqlite(
+          method, await dbs.getCartTotal(), printhelper.sourceProduct, true);
+      // deleteAllProducts(context, true, false);
+      // showSuccessfulPaymentDialog(context, amount, isFromProductsScreen, isFromQrCode)
     });
   }
 
@@ -191,20 +203,20 @@ class _CartsummaryState extends State<Cartsummary> {
               //     "CASH", printhelper.sourceProduct, cartProductsList);
             },
           ),
-          IconButton(
-            icon: const Icon(
-              Icons.print,
-              color: Colors.white,
-            ),
-            tooltip: 'Sync',
-            onPressed: () {
-              printhelper
-                  .printProductReciept("CASH", printhelper.sourceProduct)
-                  .then((_) {
-                deleteAllProducts(context);
-              });
-            },
-          ),
+          // IconButton(
+          //   icon: const Icon(
+          //     Icons.print,
+          //     color: Colors.white,
+          //   ),
+          //   tooltip: 'Print',
+          //   onPressed: () {
+          //     printhelper
+          //         .printProductReciept("CASH", printhelper.sourceProduct)
+          //         .then((_) async {
+          //       deleteAllProducts(context, true);
+          //     });
+          //   },
+          // ),
         ],
       ),
       bottomSheet: Container(
@@ -232,7 +244,7 @@ class _CartsummaryState extends State<Cartsummary> {
                   'Error: ${snapshot.error}',
                   style: TextStyle(
                       color: Colors.red,
-                      fontSize: getadaptiveTextSize(context, 20)),
+                      fontSize: getAdaptiveTextSize(context, 20)),
                 ),
               ); // Handle error
             } else if (snapshot.hasData) {

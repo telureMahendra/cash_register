@@ -503,7 +503,8 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: Container(
-                  padding: const EdgeInsets.all(8.0),
+                  // width: width,
+                  // padding: EdgeInsets.symmetric(horizontal: 25),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -824,7 +825,7 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
                               ),
                             ),
                           ),
-                          Container(
+                          SizedBox(
                             width: width * 0.15,
                             height: height * 0.11,
                             child: Column(

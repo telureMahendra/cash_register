@@ -62,7 +62,7 @@ class _CartItemWidgetState extends State<CartItemWidget> {
         child: AlertDialog(
           // title: const Text('Timer Finished'),
           content: SizedBox(
-            height: height * 0.28,
+            height: height * 0.3,
             width: width * 0.98,
             child: Column(
               children: [
@@ -75,7 +75,7 @@ class _CartItemWidgetState extends State<CartItemWidget> {
                         },
                         child: Icon(
                           Icons.close,
-                          size: getadaptiveTextSize(context, 20),
+                          size: getAdaptiveTextSize(context, 20),
                         ))
                   ],
                 ),

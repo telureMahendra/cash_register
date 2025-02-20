@@ -22,6 +22,7 @@ class CartSummaryItemDetailsWidget extends StatefulWidget {
 class _CartSummaryItemDetailsWidgetState
     extends State<CartSummaryItemDetailsWidget> {
   late CartItem cartItem;
+  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   var size, width, height;
 
@@ -43,14 +44,17 @@ class _CartSummaryItemDetailsWidgetState
     loadCartProduct();
   }
 
-  void updatPrice() async {
+  Future<bool> updatPrice() async {
     final dbs = DatabaseService.instance;
-
-    dbs
-        .changePrice(widget.productId, priceEditContoller.text.toString())
-        .then((_) async {
-      StreamHelper.cartFinalAmounSink.add(await dbs.getCartTotal());
-    });
+    if (_formKey.currentState!.validate()) {
+      dbs
+          .changePrice(widget.productId, priceEditContoller.text.toString())
+          .then((_) async {
+        StreamHelper.cartFinalAmounSink.add(await dbs.getCartTotal());
+      });
+      return true;
+    }
+    return false;
   }
 
   Future<bool> _onWillPopDialouge() async {
@@ -69,7 +73,7 @@ class _CartSummaryItemDetailsWidgetState
         child: AlertDialog(
           // title: const Text('Timer Finished'),
           content: SizedBox(
-            height: height * 0.28,
+            height: height * 0.25,
             width: width * 0.98,
             child: Column(
               children: [
@@ -82,50 +86,65 @@ class _CartSummaryItemDetailsWidgetState
                         },
                         child: Icon(
                           Icons.close,
-                          size: getadaptiveTextSize(context, 20),
+                          size: getAdaptiveTextSize(context, 20),
                         ))
                   ],
                 ),
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-                  child: TextFormField(
-                    style: const TextStyle(fontSize: 20),
-                    controller: priceEditContoller,
-                    decoration: InputDecoration(
-                      prefixIcon: Icon(Icons.money, color: Colors.black54),
-                      hintText: 'Product Price',
-                      hintStyle:
-                          const TextStyle(color: Colors.black45, fontSize: 18),
-                      enabledBorder: OutlineInputBorder(
-                        borderSide: BorderSide.none,
-                        borderRadius: BorderRadius.circular(10),
+                Form(
+                  key: _formKey,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 10, horizontal: 20),
+                    child: TextFormField(
+                      style: const TextStyle(fontSize: 20),
+                      controller: priceEditContoller,
+                      decoration: InputDecoration(
+                        prefixIcon: Icon(Icons.money, color: Colors.black54),
+                        hintText: 'Product Price',
+                        hintStyle: const TextStyle(
+                            color: Colors.black45, fontSize: 18),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide.none,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        border: InputBorder.none,
+                        focusedBorder: OutlineInputBorder(
+                          borderSide:
+                              const BorderSide(color: Colors.blue, width: 2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        filled: true,
+                        fillColor: const Color(0xFFedf0f8),
+                        contentPadding: const EdgeInsets.symmetric(
+                          vertical: 15,
+                          horizontal: 20,
+                        ),
                       ),
-                      border: InputBorder.none,
-                      focusedBorder: OutlineInputBorder(
-                        borderSide:
-                            const BorderSide(color: Colors.blue, width: 2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      filled: true,
-                      fillColor: const Color(0xFFedf0f8),
-                      contentPadding: const EdgeInsets.symmetric(
-                        vertical: 15,
-                        horizontal: 20,
-                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Price Should not be empty!';
+                        }
+                        if (value.length > 6) {
+                          return 'Please enter valid price';
+                        }
+
+                        return null;
+                      },
+                      // obscureText: _obscureText,
+                      // autovalidateMode: AutovalidateMode.onUserInteraction,
                     ),
-                    keyboardType: TextInputType.number,
-                    // obscureText: _obscureText,
-                    // autovalidateMode: AutovalidateMode.onUserInteraction,
                   ),
                 ),
                 ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       // cartProductsList[index].price =
                       //     priceEditContoller.text.toString();
-                      updatPrice();
+                      // updatPrice();
 
-                      Navigator.pop(context);
+                      if (await updatPrice()) {
+                        Navigator.pop(context);
+                      }
                     },
                     child: Text("Update"))
               ],
@@ -184,8 +203,8 @@ class _CartSummaryItemDetailsWidgetState
                     style: TextStyle(fontSize: 16),
                   ),
                   SizedBox(
-                    width: 30,
-                    height: 30,
+                    width: height * 0.04,
+                    height: height * 0.04,
                     child: Center(
                       child: IconButton(
                         onPressed: () {
@@ -200,7 +219,7 @@ class _CartSummaryItemDetailsWidgetState
                         icon: Icon(
                           Icons.mode_edit_outline,
                           color: Colors.black,
-                          size: getadaptiveTextSize(context, 15),
+                          size: getAdaptiveTextSize(context, 15),
                         ),
                       ),
                     ),
@@ -220,8 +239,8 @@ class _CartSummaryItemDetailsWidgetState
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   SizedBox(
-                    width: 35,
-                    height: 35,
+                    width: height * 0.04,
+                    height: height * 0.04,
                     child: Center(
                       child: IconButton(
                         onPressed: () {
@@ -238,7 +257,7 @@ class _CartSummaryItemDetailsWidgetState
                         icon: Icon(
                           Icons.remove,
                           color: Colors.black,
-                          size: getadaptiveTextSize(context, 18),
+                          size: getAdaptiveTextSize(context, 18),
                         ),
                       ),
                     ),
@@ -249,8 +268,8 @@ class _CartSummaryItemDetailsWidgetState
                         fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(
-                    width: 35,
-                    height: 35,
+                    width: height * 0.04,
+                    height: height * 0.04,
                     child: Center(
                       child: IconButton(
                         onPressed: () {
@@ -266,7 +285,7 @@ class _CartSummaryItemDetailsWidgetState
                         icon: Icon(
                           Icons.add,
                           color: Colors.black,
-                          size: getadaptiveTextSize(context, 18),
+                          size: getAdaptiveTextSize(context, 18),
                         ),
                       ),
                     ),

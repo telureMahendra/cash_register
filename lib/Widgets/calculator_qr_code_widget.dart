@@ -1,6 +1,7 @@
 import 'package:cash_register/Widgets/all_dialog.dart';
 import 'package:cash_register/common_utils/assets_path.dart';
 import 'package:cash_register/common_utils/common_functions.dart';
+import 'package:cash_register/db/sqfLite_db_service.dart';
 import 'package:cash_register/helper/printe_helper.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +35,8 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
   String upiID = '';
   Printhelper printhelper = Printhelper();
 
+  final dbs = DatabaseService.instance;
+
   @override
   void initState() {
     loadData();
@@ -49,6 +52,16 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
     print("Data Fetched ");
     print(businessName);
     print(upiID);
+  }
+
+  printReciept(String method) async {
+    saveTransactionSqlite(
+        method, widget.amount, printhelper.sourceCalculator, true);
+
+    printhelper.printThermalReciept(
+        method, printhelper.sourceCalculator, widget.evalString);
+
+    showSuccessfulPaymentDialog(context, widget.amount, false, false);
   }
 
   Future<bool> _onWillPopDialouge() async {
@@ -78,7 +91,7 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                   "Complete Your Payment",
                   style: TextStyle(
                       color: Colors.black,
-                      fontSize: getadaptiveTextSize(context, 13)),
+                      fontSize: getAdaptiveTextSize(context, 13)),
                 ),
                 Container(
                   padding: EdgeInsets.only(
@@ -88,7 +101,7 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                     style: TextStyle(
                         color: Colors.green,
                         fontWeight: FontWeight.w900,
-                        fontSize: getadaptiveTextSize(context, 30)),
+                        fontSize: getAdaptiveTextSize(context, 30)),
                   ),
                 ),
                 Container(
@@ -99,7 +112,7 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                     style: TextStyle(
                         color: Colors.black,
                         fontWeight: FontWeight.w600,
-                        fontSize: getadaptiveTextSize(context, 20)),
+                        fontSize: getAdaptiveTextSize(context, 20)),
                   ),
                 ),
                 Container(
@@ -108,7 +121,7 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                     'Scan and pay using UPI app',
                     style: TextStyle(
                         color: Colors.black,
-                        fontSize: getadaptiveTextSize(context, 15)),
+                        fontSize: getAdaptiveTextSize(context, 15)),
                   ),
                 ),
                 Code(
@@ -125,7 +138,7 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                     'UPI ID: $upiID',
                     style: TextStyle(
                         color: Colors.black,
-                        fontSize: getadaptiveTextSize(context, 15)),
+                        fontSize: getAdaptiveTextSize(context, 15)),
                   ),
                 ),
                 Center(
@@ -155,7 +168,7 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                     ),
                     timeTextStyle: TextStyle(
                         fontWeight: FontWeight.w800,
-                        fontSize: getadaptiveTextSize(context, 20)),
+                        fontSize: getAdaptiveTextSize(context, 20)),
                     onEnd: () {
                       // print("Timer finished");
                       showDialog<void>(
@@ -181,7 +194,7 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                                     style: TextStyle(
                                         color: Colors.red,
                                         fontSize:
-                                            getadaptiveTextSize(context, 15)),
+                                            getAdaptiveTextSize(context, 15)),
                                   ),
                                   Container(
                                     padding:
@@ -211,25 +224,29 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                                                 // Navigator
                                                 //     .popUntil(
                                                 //         context);
-                                                saveTransactionSqlite(
-                                                    widget.method,
-                                                    widget.amount,
-                                                    widget.tranSource,
-                                                    widget.isDeviceConnected);
-                                                printhelper.printThermalReciept(
-                                                    widget.method,
-                                                    printhelper
-                                                        .sourceCalculator,
-                                                    widget.evalString);
-                                                showSuccessfulPaymentDialog(
-                                                    context, widget.amount);
+                                                // saveTransactionSqlite(
+                                                //     widget.method,
+                                                //     widget.amount,
+                                                //     widget.tranSource,
+                                                //     widget.isDeviceConnected);
+                                                // printhelper.printThermalReciept(
+                                                //     widget.method,
+                                                //     printhelper
+                                                //         .sourceCalculator,
+                                                //     widget.evalString);
+                                                // showSuccessfulPaymentDialog(
+                                                //     context,
+                                                //     widget.amount,
+                                                //     false,
+                                                //     false);
+                                                printReciept("QR/UPI");
                                               },
                                               child: Text(
                                                 "Print Receipt",
                                                 style: TextStyle(
                                                     color: Colors.white,
                                                     fontSize:
-                                                        getadaptiveTextSize(
+                                                        getAdaptiveTextSize(
                                                             context, 14)),
                                               )),
                                         ),
@@ -256,7 +273,7 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                                                 style: TextStyle(
                                                     color: Colors.black,
                                                     fontSize:
-                                                        getadaptiveTextSize(
+                                                        getAdaptiveTextSize(
                                                             context, 14)),
                                               )),
                                         ),
@@ -283,7 +300,7 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                 "Check Payment Application: If a payment notification is received, print a receipt.",
                 style: TextStyle(
                   color: Colors.red,
-                  fontSize: getadaptiveTextSize(context, 12),
+                  fontSize: getAdaptiveTextSize(context, 12),
                 ),
               ),
             ),
@@ -305,25 +322,20 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                 children: [
                   Icon(
                     Icons.print_outlined,
-                    size: getadaptiveTextSize(context, 19),
+                    size: getAdaptiveTextSize(context, 19),
                     color: const Color.fromARGB(255, 58, 104, 125),
                   ),
                   Text(
                     'Print Receipt',
                     style: TextStyle(
                         color: Colors.black,
-                        fontSize: getadaptiveTextSize(context, 15)),
+                        fontSize: getAdaptiveTextSize(context, 15)),
                   ),
                 ],
               ),
               onPressed: () {
-                Navigator.pop(context);
-
-                saveTransactionSqlite(widget.method, widget.amount,
-                    widget.tranSource, widget.isDeviceConnected);
-                printhelper.printThermalReciept(widget.method,
-                    printhelper.sourceCalculator, widget.evalString);
-                showSuccessfulPaymentDialog(context, widget.amount);
+                Navigator.of(context).pop();
+                printReciept("QR/UPI");
               },
             ),
           ),
@@ -346,14 +358,14 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                 children: [
                   Icon(
                     Icons.home_outlined,
-                    size: getadaptiveTextSize(context, 19),
+                    size: getAdaptiveTextSize(context, 19),
                     color: const Color.fromARGB(255, 58, 104, 125),
                   ),
                   Text(
                     'Back To Home',
                     style: TextStyle(
                         color: Colors.black,
-                        fontSize: getadaptiveTextSize(context, 15)),
+                        fontSize: getAdaptiveTextSize(context, 15)),
                   ),
                 ],
               ),

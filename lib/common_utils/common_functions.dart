@@ -1,15 +1,19 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
 import 'package:cash_register/Widgets/all_dialog.dart';
-import 'package:cash_register/Widgets/qr_code_widget.dart';
+import 'package:cash_register/Widgets/calculator_qr_code_widget.dart';
+import 'package:cash_register/Widgets/product_qr_code_widget.dart';
 import 'package:cash_register/common_utils/assets_path.dart';
 import 'package:cash_register/common_utils/strings.dart';
 import 'package:cash_register/db/sqfLite_db_service.dart';
+import 'package:cash_register/helper/printe_helper.dart';
 import 'package:cash_register/helper/service/transaction_sync_service.dart';
 import 'package:cash_register/helper/stream_helper.dart';
 import 'package:cash_register/model/cart_item.dart';
 import 'package:cash_register/model/environment.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -17,7 +21,7 @@ import 'package:math_expressions/math_expressions.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
-double getadaptiveTextSize(BuildContext context, dynamic value) {
+double getAdaptiveTextSize(BuildContext context, dynamic value) {
   return (value / 710) * MediaQuery.of(context).size.height;
 }
 
@@ -111,15 +115,26 @@ Future<Map<String, dynamic>> findCartProductById(int productId) {
   return dbs.getCartProductById(productId);
 }
 
-void deleteAllProducts(BuildContext context) {
+void deleteAllProducts(BuildContext context) async {
   final dbs = DatabaseService.instance;
   // StreamHelper.cartFinalAmounSink.add(await dbs.getCartTotal());
+  // showSuccessfulPaymentDialog(context, await dbs.getCartTotal());
+  String total = await dbs.getCartTotal();
   dbs.emptyCart().then((_) async {
     StreamHelper.cartCountSink.add(await dbs.getCartCount());
 
     if (context.mounted) {
-      Navigator.maybePop(context);
+      Navigator.pop(context);
     }
+  });
+}
+
+void clearCart() async {
+  final dbs = DatabaseService.instance;
+
+  String total = await dbs.getCartTotal();
+  dbs.emptyCart().then((_) async {
+    StreamHelper.cartCountSink.add(await dbs.getCartCount());
   });
 }
 
@@ -153,8 +168,45 @@ Future<bool> onWillPopDialouge() async {
   return false;
 }
 
-bool showQrCodeDialog(BuildContext context, String total, String method,
-    String tranSource, bool isDeviceConnected, String evalString) {
+printQrReciept(String method, BuildContext context) async {
+  final dbs = DatabaseService.instance;
+  Printhelper printHelper = Printhelper();
+  printHelper
+      .printProductReciept("CASH", printHelper.sourceProduct)
+      .then((_) async {
+    saveTransactionSqlite(
+        method, await dbs.getCartTotal(), printHelper.sourceProduct, true);
+    // deleteAllProducts(context, true, false);
+    // Navigator.pop(context);
+  });
+}
+
+void showProductQrCodeDialog(BuildContext context, String total, String method,
+    String tranSource, bool isDeviceConnected) {
+  showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (context) => WillPopScope(
+      onWillPop: onWillPopDialouge,
+      child: AlertDialog(
+        content: ProductQrCodeWidget(
+          amount: total,
+          method: method,
+          tranSource: tranSource,
+          isDeviceConnected: isDeviceConnected,
+        ),
+      ),
+    ),
+  );
+}
+
+bool showCalculatorQrCodeDialog(
+    BuildContext context,
+    String total,
+    String method,
+    String tranSource,
+    bool isDeviceConnected,
+    String evalString) {
   showDialog<void>(
     context: context,
     barrierDismissible: false,
@@ -191,6 +243,7 @@ Future<bool> saveTransactionSqlite(String method, String amount,
           inrAmount, method, time, date, userId, dateTime, 0, tranSource)
       .then((_) {
     syncTransaction(isDeviceConnected);
+    print("data inserted");
     return true;
   });
   return false;
@@ -253,5 +306,35 @@ void saveTransactionToServer(String method, String amount1, String tranSource,
     // ignore: use_build_context_synchronously
     showSuccessFailDialog(
         context, warningAnimationPath, serverNotRespondingMessage);
+  }
+}
+
+Future<String> getDeviceModel() async {
+  DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+
+  if (Platform.isAndroid) {
+    AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+    print(androidInfo.serialNumber);
+    return androidInfo.model;
+  } else if (Platform.isIOS) {
+    IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
+    return iosInfo.utsname.machine;
+  } else {
+    return 'Unknown Device';
+  }
+}
+
+Future<String> getDeviceModelN() async {
+  DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+
+  if (Platform.isAndroid) {
+    AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+    print(androidInfo.serialNumber);
+    return androidInfo.model;
+  } else if (Platform.isIOS) {
+    IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
+    return iosInfo.utsname.machine;
+  } else {
+    return 'Unknown Device';
   }
 }

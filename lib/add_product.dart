@@ -1,13 +1,9 @@
 import 'dart:convert';
-import 'dart:ffi';
+
 import 'dart:io';
 import 'dart:math';
 
-import 'package:cash_register/helper/helper.dart';
-import 'package:cash_register/home_page.dart';
-import 'package:cash_register/image_crop.dart';
 import 'package:cash_register/model/environment.dart';
-import 'package:cash_register/modules/product_module/products_screen.dart';
 import 'package:custom_image_crop/custom_image_crop.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -23,7 +19,8 @@ class Addproduct extends StatefulWidget {
 }
 
 class _AddproductState extends State<Addproduct> {
-  var size, width, height;
+  late Size size;
+  late double width, height;
   File? galleryFile;
   late File file;
   final picker = ImagePicker();
@@ -565,19 +562,24 @@ class _AddproductState extends State<Addproduct> {
               Padding(
                 padding:
                     const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-                child: SizedBox(
-                  height: height * 0.150,
-                  child: image == null
-                      ? Image.asset("assets/images/noImage.png")
-                      : Image.memory(
-                          Base64Decoder().convert(imageBase64),
-                          fit: BoxFit.fitWidth,
-                        ),
+                child: InkWell(
+                  onTap: () {
+                    _showPicker(context: context);
+                  },
+                  child: SizedBox(
+                    height: height * 0.150,
+                    child: image == null
+                        ? Image.asset("assets/images/noImage.png")
+                        : Image.memory(
+                            Base64Decoder().convert(imageBase64),
+                            fit: BoxFit.fitWidth,
+                          ),
 
-                  // : CircleAvatar(
-                  //     radius: 10, // Image radius
-                  //     backgroundImage: NetworkImage('imageUrl'),
-                  //   ),
+                    // : CircleAvatar(
+                    //     radius: 10, // Image radius
+                    //     backgroundImage: NetworkImage('imageUrl'),
+                    //   ),
+                  ),
                 ),
               ),
               Padding(

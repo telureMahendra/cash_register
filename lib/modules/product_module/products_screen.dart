@@ -9,6 +9,7 @@ import 'package:cash_register/db/sqfLite_db_service.dart';
 import 'package:cash_register/helper/helper.dart';
 import 'package:cash_register/helper/product.dart';
 import 'package:cash_register/helper/stream_helper.dart';
+import 'package:cash_register/model/cart_item.dart';
 import 'package:cash_register/model/environment.dart';
 import 'package:cash_register/modules/product_module/widgets/cart_icon_widget.dart';
 import 'package:cash_register/modules/product_module/widgets/product_widget.dart';
@@ -60,43 +61,67 @@ class ProductsListState extends State<ProductsList> {
     return '${exp.evaluate(EvaluationType.REAL, cm)}';
   }
 
-  // printReciept() async {
-  //   final prefs = await SharedPreferences.getInstance();
-  //   var amount = '';
-  //   String productString = '';
+  printReciept() async {
+    final prefs = await SharedPreferences.getInstance();
+    var amount = '';
+    String productString = '';
 
-  //   for (CartProduct product in cartProducts) {
-  //     amount += '+${product.price}*${product.countNumber}';
-  //     productString += '${product.productName}.';
-  //     productString += '${product.countNumber}.';
-  //     productString += '${inrFormat.format(double.parse(product.price))}"';
-  //   }
+    List<CartItem> data = await getCartProducts();
 
-  //   amount = calculate(amount);
+    for (CartItem product in data) {
+      amount += '+${product.price}*${product.countNumber}';
+      productString += '${product.productName}.';
+      productString += '${product.countNumber}.';
+      productString += '${inrFormat.format(double.parse(product.price))}"';
+      // var _price = _calculate(product.countNumber, product.price);
+      // _total += '+$_price';
+      // bytes += PostCode.text(
+      //   text:
+      //       '${product.productName}${_addSpace(21 - product.productName.length)}${product.countNumber}${_addSpace(21 - 4 - product.countNumber.toString().length - _price.length)}Rs. $_price',
+      //   fontSize: FontSize.compressed,
+      //   align: AlignPos.center,
+      // );
+    }
 
-  //   bool status;
-  //   status = prefs.getBool('isLogoPrint') ?? false;
-  //   channel.invokeListMethod("printProductReceipt", {
-  //     "shopName": prefs.getString("businessName") ?? '',
-  //     "address": prefs.getString("address") ?? '',
-  //     "shopMobile": prefs.getString('businessMobile') ?? '',
-  //     "shopEmail": prefs.getString('businessEmail') ?? '',
-  //     "amount": '${inrFormat.format(double.parse(amount))}',
-  //     "gstNumber": prefs.getString('gstNumber') ?? '',
-  //     "isPrintGST": prefs.getBool('isPrintGST') ?? '',
-  //     "image": status ? prefs.getString('image') ?? '' : '',
-  //     "items": productString
-  //   });
+    // for (CartProduct product in cartProducts) {
+    //   amount += '+${product.price}*${product.countNumber}';
+    //   productString += '${product.productName}.';
+    //   productString += '${product.countNumber}.';
+    //   productString += '${inrFormat.format(double.parse(product.price))}"';
+    // }
 
-  //   cartProducts.removeRange(0, cartProducts.length);
+    amount = calculate(amount);
 
-  //   for (ProductDetails p in _productListSearched) {
-  //     var index = _productListSearched.indexOf(p);
-  //     _productListSearched[index].isSelected = false;
-  //     _productListSearched[index].countNumber = 0;
-  //   }
-  //   setState(() {});
-  // }
+    var invProdCounter = prefs.getInt("invProdCounter") ?? 1;
+    //   prefs.setInt("invProdCounter", invProdCounter++);
+
+    bool status;
+    status = prefs.getBool('isLogoPrint') ?? false;
+    channel.invokeListMethod("printProductReceipt", {
+      "shopName": prefs.getString("businessName") ?? '',
+      "address": prefs.getString("address") ?? '',
+      "shopMobile": prefs.getString('businessMobile') ?? '',
+      "shopEmail": prefs.getString('businessEmail') ?? '',
+      "amount": '${inrFormat.format(double.parse(amount))}',
+      "gstNumber": prefs.getString('gstNumber') ?? '',
+      "isPrintGST": prefs.getBool('isPrintGST') ?? '',
+      "image": status ? prefs.getString('image') ?? '' : '',
+      "items": productString,
+      "count": "123",
+      "method": "upi"
+    });
+
+    prefs.setInt("invProdCounter", invProdCounter++);
+
+    // cartProducts.removeRange(0, cartProducts.length);
+
+    // for (ProductDetails p in _productListSearched) {
+    //   var index = _productListSearched.indexOf(p);
+    //   _productListSearched[index].isSelected = false;
+    //   _productListSearched[index].countNumber = 0;
+    // }
+    // setState(() {});
+  }
 
   @override
   void initState() {

@@ -90,7 +90,7 @@ class _CalculatorState extends State<Calculator> {
 
   var channel = MethodChannel("printMethod");
 
-  printReciept() async {
+  printReciept(method) async {
     final prefs = await SharedPreferences.getInstance();
 
     if (evalString[evalString.length - 1] == '+') {
@@ -105,6 +105,11 @@ class _CalculatorState extends State<Calculator> {
       items += "Item=${inrFormat.format(double.parse(a.toString()))}'";
     }
 
+    // var invProdCounter = prefs.getInt("invProdCounter") ?? 1;
+    //   prefs.setInt("invProdCounter", invProdCounter++);
+
+    var invCalCounter = prefs.getInt("invCalCounter") ?? 1;
+
     bool status;
     status = prefs.getBool('isLogoPrint') ?? false;
     channel.invokeListMethod("printCartReceipt", {
@@ -116,8 +121,12 @@ class _CalculatorState extends State<Calculator> {
       "gstNumber": prefs.getString('gstNumber') ?? '',
       "isPrintGST": prefs.getBool('isPrintGST') ?? '',
       "image": status ? prefs.getString('image') ?? '' : '',
-      "items": items
+      "items": items,
+      "count": "Cal/${invCalCounter++}",
+      "method": method
     });
+    prefs.setInt("invCalCounter", invCalCounter++);
+    clear();
   }
 
   String _info = "";
@@ -633,7 +642,7 @@ class _CalculatorState extends State<Calculator> {
               TextButton(
                 child: Text(
                   'Ok',
-                  style: TextStyle(fontSize: getadaptiveTextSize(context, 15)),
+                  style: TextStyle(fontSize: getAdaptiveTextSize(context, 15)),
                 ),
                 onPressed: () {
                   Navigator.of(context).pop();
@@ -677,6 +686,93 @@ class _CalculatorState extends State<Calculator> {
     checkLoggedIn();
     checkBusinessDetailsFound();
     checkPaired();
+    getInfo();
+  }
+
+  getInfo() async {
+    String deviceModel = await getDeviceModel();
+    print("device model is : $deviceModel");
+  }
+
+  showSuccessfulPaymentDialogcal(
+      BuildContext context, String amount, bool isFromProductsScreen) async {
+    Size size = MediaQuery.of(context).size;
+    double width = size.width;
+    double height = size.height;
+    final prefs = await SharedPreferences.getInstance();
+    var recieptSwitch = prefs.getBool("recieptSwitch") ?? false;
+
+    if (recieptSwitch) {
+      // printhelper.printThermalReciept(
+      //     method, printhelper.sourceCalculator, evalString);
+    }
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        insetPadding: EdgeInsets.only(bottom: 20),
+        content: Container(
+          padding: EdgeInsets.only(bottom: 0),
+          height: height * 0.3,
+          width: width * 0.70,
+          child: Column(
+            children: [
+              Lottie.asset('assets/animations/check_animation.json',
+                  height: height * 0.10, repeat: false, animate: true),
+              Container(
+                padding: EdgeInsets.only(bottom: 0),
+                child: Text(
+                  'Payment Successful',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontSize: getAdaptiveTextSize(context, 20),
+                  ),
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.only(bottom: 10),
+                child: Text(
+                  inrFormat.format(double.parse(amount)),
+                  // amount,
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: getAdaptiveTextSize(context, 30),
+                  ),
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.only(top: 5),
+                width: width * 0.49,
+                height: height * 0.05,
+                child: OutlinedButton(
+                  style: TextButton.styleFrom(),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.home_outlined,
+                        size: getAdaptiveTextSize(context, 19),
+                        color: const Color.fromARGB(255, 58, 104, 125),
+                      ),
+                      Text(
+                        'Back To Home',
+                        style: TextStyle(
+                            color: Colors.black,
+                            fontSize: getAdaptiveTextSize(context, 15)),
+                      ),
+                    ],
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> payBill(
@@ -690,10 +786,14 @@ class _CalculatorState extends State<Calculator> {
       if (method == 'CASH') {
         saveTransactionSqlite(
             method, total, printhelper.sourceCalculator, isDeviceConnected);
-        showSuccessfulPaymentDialog(context, total);
-        printhelper.printThermalReciept(
-            method, printhelper.sourceCalculator, evalString);
-        clear();
+        showSuccessfulPaymentDialogcal(context, total, false);
+        if (await getDeviceModel() == "P3000") {
+          printReciept("CASH");
+        } else {
+          printhelper.printThermalReciept(
+              method, printhelper.sourceCalculator, evalString);
+          clear();
+        }
       } else {
         if (true) {
           upiID = prefs.getString("upiID") ?? '';
@@ -712,10 +812,15 @@ class _CalculatorState extends State<Calculator> {
             //     ),
             //   ),
             // );
-            bool status = showQrCodeDialog(context, total, method,
-                printhelper.sourceCalculator, true, evalString);
-            if (status) {
-              clear();
+            if (await getDeviceModel() == "P3000") {
+              showSuccessfulPaymentDialogcal(context, total, false);
+              printReciept("QR/UPI");
+            } else {
+              bool status = showCalculatorQrCodeDialog(context, total, method,
+                  printhelper.sourceCalculator, true, evalString);
+              if (status) {
+                clear();
+              }
             }
             // ar duration = const Duration(seconds: 5);
           } else {
@@ -790,7 +895,7 @@ class _CalculatorState extends State<Calculator> {
       if (response.statusCode == 200) {
         // If the server did return a 201 CREATED response,
         // then parse the JSON.
-        showSuccessfulPaymentDialog(context, total);
+        showSuccessfulPaymentDialog(context, total, false, false);
         // successful(method);
       } else {
         // If the server did not return a 201 CREATED response,
@@ -972,7 +1077,7 @@ class _CalculatorState extends State<Calculator> {
                     'Payment Successful',
                     style: TextStyle(
                       color: Colors.green,
-                      fontSize: getadaptiveTextSize(context, 20),
+                      fontSize: getAdaptiveTextSize(context, 20),
                     ),
                   ),
                 ),
@@ -982,7 +1087,7 @@ class _CalculatorState extends State<Calculator> {
                     '${inrFormat.format(double.parse(total))}',
                     style: TextStyle(
                       color: Colors.black,
-                      fontSize: getadaptiveTextSize(context, 30),
+                      fontSize: getAdaptiveTextSize(context, 30),
                     ),
                   ),
                 ),
@@ -997,14 +1102,14 @@ class _CalculatorState extends State<Calculator> {
                       children: [
                         Icon(
                           Icons.home_outlined,
-                          size: getadaptiveTextSize(context, 19),
+                          size: getAdaptiveTextSize(context, 19),
                           color: const Color.fromARGB(255, 58, 104, 125),
                         ),
                         Text(
                           'Back To Home',
                           style: TextStyle(
                               color: Colors.black,
-                              fontSize: getadaptiveTextSize(context, 15)),
+                              fontSize: getAdaptiveTextSize(context, 15)),
                         ),
                       ],
                     ),
@@ -1022,7 +1127,7 @@ class _CalculatorState extends State<Calculator> {
 
   void successfulOld() {
     // calling method channel function
-    printReciept();
+    // printReciept();
 
     // showing Successful Message
     showDialog<void>(
@@ -1052,7 +1157,7 @@ class _CalculatorState extends State<Calculator> {
                     '${inrFormat.format(double.parse(total))}',
                     style: TextStyle(
                       color: Colors.green,
-                      fontSize: getadaptiveTextSize(context, 30),
+                      fontSize: getAdaptiveTextSize(context, 30),
                     ),
                   ),
                 )
@@ -1172,7 +1277,7 @@ class _CalculatorState extends State<Calculator> {
                             style: TextStyle(
                               color: Colors.red,
                               fontWeight: FontWeight.w700,
-                              fontSize: getadaptiveTextSize(context, 15),
+                              fontSize: getAdaptiveTextSize(context, 15),
                             ),
                           ),
                           Text(
@@ -1181,7 +1286,7 @@ class _CalculatorState extends State<Calculator> {
                             style: TextStyle(
                               color: Colors.red,
                               fontWeight: FontWeight.w900,
-                              fontSize: getadaptiveTextSize(context, 20),
+                              fontSize: getAdaptiveTextSize(context, 20),
                             ),
                           ),
                         ],
@@ -1198,14 +1303,14 @@ class _CalculatorState extends State<Calculator> {
                       children: [
                         Icon(
                           Icons.home_outlined,
-                          size: getadaptiveTextSize(context, 19),
+                          size: getAdaptiveTextSize(context, 19),
                           color: const Color.fromARGB(255, 58, 104, 125),
                         ),
                         Text(
                           'Back To Home',
                           style: TextStyle(
                               color: Colors.black,
-                              fontSize: getadaptiveTextSize(context, 15)),
+                              fontSize: getAdaptiveTextSize(context, 15)),
                         ),
                       ],
                     ),
@@ -1272,7 +1377,7 @@ class _CalculatorState extends State<Calculator> {
             title: new Text('Are you sure?'),
             content: new Text(
               'Do you want to exit an App',
-              style: TextStyle(fontSize: getadaptiveTextSize(context, 18)),
+              style: TextStyle(fontSize: getAdaptiveTextSize(context, 18)),
             ),
             actions: <Widget>[
               Row(
@@ -1294,7 +1399,7 @@ class _CalculatorState extends State<Calculator> {
                       child: new Text(
                         'No',
                         style: TextStyle(
-                            fontSize: getadaptiveTextSize(context, 15)),
+                            fontSize: getAdaptiveTextSize(context, 15)),
                       ),
                     ),
                   ),
@@ -1313,7 +1418,7 @@ class _CalculatorState extends State<Calculator> {
                       child: new Text(
                         'Yes',
                         style: TextStyle(
-                            fontSize: getadaptiveTextSize(context, 15)),
+                            fontSize: getAdaptiveTextSize(context, 15)),
                       ),
                     ),
                   ),
@@ -1330,9 +1435,7 @@ class _CalculatorState extends State<Calculator> {
     size = MediaQuery.of(context).size;
     width = size.width;
     height = size.height;
-    // appBarHeight = AppBar().preferredSize.height;
-    print("height = $height");
-    print("width = $width");
+
     appBarHeight = AppBar().preferredSize.height;
     btnHeight = (height - 337) / 4 - height * 0.033;
     btnWidth = (width - (width / 4)) / 3 - (width * 0.030);
@@ -1458,7 +1561,7 @@ class _CalculatorState extends State<Calculator> {
                           Text(
                             "TOTAL AMOUNT ",
                             style: TextStyle(
-                                fontSize: getadaptiveTextSize(context, 12),
+                                fontSize: getAdaptiveTextSize(context, 12),
                                 fontWeight: FontWeight.bold),
                           ),
                         ],
@@ -1483,7 +1586,7 @@ class _CalculatorState extends State<Calculator> {
                                       softWrap: true,
                                       style: TextStyle(
                                           fontSize:
-                                              getadaptiveTextSize(context, 15),
+                                              getAdaptiveTextSize(context, 15),
                                           fontWeight: FontWeight.bold),
                                     ),
                                   ],
@@ -1529,7 +1632,7 @@ class _CalculatorState extends State<Calculator> {
                               children: [
                                 Icon(
                                   Icons.money,
-                                  size: getadaptiveTextSize(context, 20),
+                                  size: getAdaptiveTextSize(context, 20),
                                   color: Colors.white,
                                 ),
                                 Text(
@@ -1537,7 +1640,7 @@ class _CalculatorState extends State<Calculator> {
                                   style: TextStyle(
                                       color: Colors.white,
                                       fontSize:
-                                          getadaptiveTextSize(context, 15)),
+                                          getAdaptiveTextSize(context, 15)),
                                 ),
                               ],
                             ),
@@ -1563,7 +1666,7 @@ class _CalculatorState extends State<Calculator> {
                               children: [
                                 Icon(
                                   Icons.qr_code,
-                                  size: getadaptiveTextSize(context, 20),
+                                  size: getAdaptiveTextSize(context, 20),
                                   color: Colors.white,
                                 ),
                                 Text(
@@ -1572,7 +1675,7 @@ class _CalculatorState extends State<Calculator> {
                                       color: Colors.white,
                                       // fontWeight: FontWeight.w700,
                                       fontSize:
-                                          getadaptiveTextSize(context, 15)),
+                                          getAdaptiveTextSize(context, 15)),
                                 ),
                               ],
                             ),
@@ -1634,7 +1737,7 @@ class _CalculatorState extends State<Calculator> {
                               overflow: TextOverflow.fade,
                               softWrap: true,
                               style: TextStyle(
-                                  fontSize: getadaptiveTextSize(context, 10)),
+                                  fontSize: getAdaptiveTextSize(context, 10)),
                             ),
                           ),
                         ],
@@ -1667,7 +1770,7 @@ class _CalculatorState extends State<Calculator> {
                                           style: TextStyle(
                                             color:
                                                 Color.fromARGB(255, 214, 7, 7),
-                                            fontSize: getadaptiveTextSize(
+                                            fontSize: getAdaptiveTextSize(
                                                 context, 15),
                                           ),
                                         ),
@@ -2336,7 +2439,7 @@ class _CalculatorState extends State<Calculator> {
         child: Text(
           text,
           style: TextStyle(
-            fontSize: getadaptiveTextSize(context, 40),
+            fontSize: getAdaptiveTextSize(context, 40),
           ),
         ),
       ),

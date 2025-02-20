@@ -141,7 +141,7 @@ class _ProductWidgetState extends State<ProductWidget> {
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.black,
-                                    fontSize: getadaptiveTextSize(context, 10)),
+                                    fontSize: getAdaptiveTextSize(context, 10)),
                               ),
                             ),
                           ),
@@ -179,7 +179,7 @@ class _ProductWidgetState extends State<ProductWidget> {
                         child: Text(
                           '$count',
                           style: TextStyle(
-                            fontSize: getadaptiveTextSize(context, 25),
+                            fontSize: getAdaptiveTextSize(context, 25),
                           ),
                         ),
                       ),

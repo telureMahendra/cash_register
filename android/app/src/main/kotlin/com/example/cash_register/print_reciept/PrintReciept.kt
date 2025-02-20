@@ -96,7 +96,7 @@ class PrintReciept() {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun printCartReceipt(shopName:String, address: String, shopEmail:String, shopMobile:String, amount:String, gstNumber:String, isPrintGST: String, encodedImage: String, items: Any?) {
+    fun printCartReceipt(shopName:String, address: String, shopEmail:String, shopMobile:String, amount:String, gstNumber:String, isPrintGST: String, encodedImage: String, items: Any?, count:String, method:String,  ) {
 
         ServiceManager.getInstence().init(MainApplication.currentApplicationContext)
         val printer: PrinterBinder = ServiceManager.getInstence().printer
@@ -193,8 +193,14 @@ class PrintReciept() {
         val formatterDate = DateTimeFormatter.ofPattern("dd-MM-yyyy")
         val formattedDate = currentDate.format(formatterDate)
 
+        printer.setLineSpace(0)
+        textPrintLine.size = TextPrintLine.FONT_SMALL
+        textPrintLine.isBold = true
+        textPrintLine.content = "Inv No.: ${count}${vizAddSpace(25-count.length-method.length)}By: ${method}"
+        textPrintLine.position = TextPrintLine.CENTER
+        printer.addPrintLine(textPrintLine)
 
-        printer.setLineSpace(10)
+        printer.setLineSpace(0)
         textPrintLine.size = TextPrintLine.FONT_SMALL
         textPrintLine.isBold = true
         textPrintLine.content = "DATE: ${formattedDate}${vizAddSpace(25-formattedDate.length-formattedTime.length)}TIME: ${formattedTime}"

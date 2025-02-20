@@ -12,6 +12,10 @@ const String printRecieptSwitchKeyName = "recieptSwitch";
 const String printGstSwitchKeyName = "isPrintGST";
 const String printLogoSwitchKeyName = "isLogoPrint";
 
+const String cashButtonText = "CASH";
+const String upiQrCodeButtonText = "QR/UPI";
+const String cardButtonText = "CARD";
+
 // username = prefs.getString("username")!;
 // userId = prefs.getInt('userId');
 // email = prefs.getString('email')!;
