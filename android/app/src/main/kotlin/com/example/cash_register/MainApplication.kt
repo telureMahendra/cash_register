@@ -5,6 +5,8 @@ import android.content.Context
 
 class MainApplication : Application() {
 
+
+
     init {
         _instance = this
     }

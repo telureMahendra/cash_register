@@ -14,6 +14,8 @@ void showSuccessFailDialog(
         padding: EdgeInsets.all(2),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Lottie.asset(animationPath,
                 height: MediaQuery.of(context).size.height * 0.17,
@@ -22,7 +24,12 @@ void showSuccessFailDialog(
                 animate: true),
             Text(
               message,
-              style: TextStyle(fontSize: getAdaptiveTextSize(context, 15)),
+              // "No Response Mapped\nResponse Code: 89",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: getAdaptiveTextSize(context, 15),
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ],
         ),
@@ -114,7 +121,6 @@ showSuccessfulPaymentDialog(BuildContext context, String amount,
                 onPressed: () {
                   print("from product screen $isFromProductsScreen");
                   if (isFromProductsScreen) {
-                    Navigator.of(context).pop();
                     // Navigator.of(context).pop();
                     // deleteAllProducts(
                     //     context, isFromProductsScreen, isFromQrCode);
@@ -129,6 +135,9 @@ showSuccessfulPaymentDialog(BuildContext context, String amount,
                     // }
                   } else {
                     Navigator.of(context).pop();
+                    while (Navigator.canPop(context)) {
+                      Navigator.pop(context);
+                    }
                   }
                 },
               ),

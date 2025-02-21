@@ -1,10 +1,14 @@
 import 'package:cash_register/Widgets/all_dialog.dart';
 import 'package:cash_register/common_utils/common_functions.dart';
+import 'package:cash_register/db/sqfLite_db_service.dart';
 import 'package:cash_register/helper/printe_helper.dart';
+import 'package:cash_register/model/cart_item.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_timer_countdown/flutter_timer_countdown.dart';
 import 'package:lottie/lottie.dart';
+import 'package:math_expressions/math_expressions.dart';
 import 'package:qr_bar_code/code/src/code_generate.dart';
 import 'package:qr_bar_code/code/src/code_type.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,8 +34,9 @@ class ProductQrCodeWidget extends StatefulWidget {
 class _ProductQrCodeWidgetState extends State<ProductQrCodeWidget> {
   String businessName = '';
   String upiID = '';
-  Printhelper printhelper = Printhelper();
 
+  final dbs = DatabaseService.instance;
+  Printhelper printHelper = Printhelper();
   @override
   void initState() {
     loadData();
@@ -43,24 +48,74 @@ class _ProductQrCodeWidgetState extends State<ProductQrCodeWidget> {
     businessName = prefs.getString("businessName") ?? "";
     upiID = prefs.getString("upiID") ?? "";
     setState(() {});
-
-    print("Data Fetched ");
-    print(businessName);
-    print(upiID);
   }
 
   Future<bool> _onWillPopDialouge() async {
     return false;
   }
 
-  void pay() {
-    Navigator.of(context).pop();
-    // Navigator.of(context).pop();
-
+  void pay() async {
     saveTransactionSqlite(widget.method, widget.amount, widget.tranSource,
         widget.isDeviceConnected);
-    printhelper.printProductReciept("QR/UPI", printhelper.sourceProduct);
+
+    if (await getDeviceModel() == "P3000") {
+      printRecieptP300("QR/UPI");
+    } else {
+      printHelper.printProductReciept("QR/UPI", printHelper.sourceProduct);
+    }
+
     showSuccessfulPaymentDialog(context, widget.amount, true, true);
+  }
+
+  var channel = MethodChannel("printMethod");
+
+  Parser p = Parser();
+
+  String calculate(amount) {
+    Expression exp = p.parse(amount);
+    ContextModel cm = ContextModel();
+    return '${exp.evaluate(EvaluationType.REAL, cm)}';
+  }
+
+  printRecieptP300(method) async {
+    final prefs = await SharedPreferences.getInstance();
+    var amount = '';
+    String productString = '';
+
+    List<CartItem> data = await getCartProducts();
+
+    for (CartItem product in data) {
+      amount += '+${product.price}*${product.countNumber}';
+      productString += '${product.productName}.';
+      productString += '${product.countNumber}.';
+      productString += '${inrFormat.format(double.parse(product.price))}"';
+    }
+
+    amount = calculate(amount);
+
+    var invProdCounter = prefs.getInt("invProdCounter") ?? 1;
+
+    bool status;
+    status = prefs.getBool('isLogoPrint') ?? false;
+    channel.invokeListMethod("printProductReceipt", {
+      "shopName": prefs.getString("businessName") ?? '',
+      "address": prefs.getString("address") ?? '',
+      "shopMobile": prefs.getString('businessMobile') ?? '',
+      "shopEmail": prefs.getString('businessEmail') ?? '',
+      "amount": '${inrFormat.format(double.parse(amount))}',
+      "gstNumber": prefs.getString('gstNumber') ?? '',
+      "isPrintGST": prefs.getBool('isPrintGST') ?? '',
+      "image": status ? prefs.getString('image') ?? '' : '',
+      "items": productString,
+      "count": "Pro/${invProdCounter++}",
+      "method": method
+    });
+
+    prefs.setInt("invProdCounter", invProdCounter++);
+
+    // saveTransactionSqlite(
+    //     "CASH", await dbs.getCartTotal(), printHelper.sourceProduct, true);
+    // showSuccessfulPaymentDialog(context, await dbs.getCartTotal(), true, false);
   }
 
   @override

@@ -1,6 +1,7 @@
 package com.example.cash_register
 
 import android.app.Instrumentation.ActivityResult
+import android.content.ComponentName
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.content.Intent
@@ -18,94 +19,152 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import org.json.JSONObject
-import com.google.gson.Gson
-import android.app.Activity
-import androidx.activity.result.ActivityResult
-import androidx.activity.result.ActivityResultContracts
-import androidx.activity.result.contract.ActivityResultContracts
+
+//import androidx.activity.result.ActivityResult
+//import androidx.activity.result.ActivityResult
+
+
 
 
 class MainActivity: FlutterActivity() {
 
 
-    val resultLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result: ActivityResult ->
-        handlePaymentAppResult(result)
+//    val resultLauncher = registerForActivityResult(
+//        ActivityResultContracts.StartActivityForResult()
+//    ) { result: ActivityResult ->
+//        handlePaymentAppResult(result)
+//    }
+
+    private val REQUESTCODE = 101
+
+    private var resultMethodChannel: MethodChannel.Result?  = null
+
+    
+
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        Log.d(TAG, "onActivityResult: getting result from activity")
+
+//        if (requestCode == REQUESTCODE){
+//            val result = data?.getStringExtra("RESULT")
+//            Log.d(TAG, "onActivityResult: Data received from payment app")
+//            Log.d(TAG, "onActivityResult: result codde is : $resultCode")
+//            resultMethodChannel?.success(result)
+//        }
+
+        Toast.makeText(this, "Received result: ${resultCode.toString()}", Toast.LENGTH_SHORT).show()
+
+
+        var bundle: Bundle? = null
+        try {
+            bundle = data!!.extras
+        } catch (e: java.lang.Exception) {
+            e.printStackTrace()
+        }
+
+        val root: JSONObject = JSONObject(bundle!!.getString("RESULT"))
+
+
+//        root = JSONObject(bundle!!.getString("RESULT").toString())
+        val RESPONSE_TYPE = root.getString("RESPONSE_TYPE")
+        val STATUS_CODE = root.getString("STATUS_CODE")
+        var STATUS_MSG = root.getString("STATUS_MSG")
+        Log.e(
+            TAG,
+            "onActivityResult: " + RESPONSE_TYPE + " " + STATUS_CODE + "STATUS_MSG" + STATUS_MSG
+        )
+
+
+
+
+
+//        if (root.has("RECEIPT_DATA")) {
+//
+//            receiptData = root.getJSONObject("RECEIPT_DATA")
+//        }
+
+
+
+        if (root.getString("STATUS_CODE").contentEquals("00")
+        )
+         {
+            val result = data?.getStringExtra("RESULT")
+            Log.d(TAG, "onActivityResult: Payment Completed")
+            resultMethodChannel?.success(result)
+        }else{
+            Log.d(TAG, "onActivityResult: Payment failed")
+            val result = data?.getStringExtra("RESULT")
+            resultMethodChannel?.error("TRANSACTION_FAILED", result, null)
+        }
     }
 
 
-    private fun handlePaymentAppResult(result: ActivityResult) {
-        val bundleData: Bundle? = result.resultData?.extras
-        val resultString = bundleData?.getString("RESULT")
+//    private val resultLauncher = registerForActivityResult(
+//        ActivityResultContracts.StartActivityForResult()
+//    ) { result: ActivityResult ->
+//        handlePaymentAppResult(result)
+//    }
 
+//    private fun handlePaymentAppResult(result: ActivityResult) {
+//        val bundleData: Bundle? = result.resultData?.extras
+//        val resultString = bundleData?.getString("RESULT")
+//
+//
+//        val parsedResult: PaymentAppResult? = try {
+//            Gson().fromJson(resultString, PaymentAppResult::class.java)
+//        } catch (_: Exception) {
+//            null
+//        }
+//
+//        if (parsedResult?.statusCode == "00") {
+////            showPaymentSuccessDialog() // TODO : Handle Here
+////            clearCartData()
+//            Log.d(TAG, "handlePaymentAppResult: payment success")
+//        } else {
+////            showPaymentFailureDialog(parsedResult?.statusMessage)
+//            Log.d(TAG, "handlePaymentAppResult: payment failed")
+//        }
+//
+//    }
 
-        val parsedResult: PaymentAppResult? = try {
-            Gson().fromJson(resultString, PaymentAppResult::class.java)
-        } catch (_: Exception) {
-            null
-        }
+    fun iciciPayment(context: Context, saleRequest: JSONObject) {
 
-        if (parsedResult?.statusCode == "00") {
-//            showPaymentSuccessDialog() // TODO : Handle Here
-//            clearCartData()
-            Log.d(TAG, "handlePaymentAppResult: payment success")
-        } else {
-//            showPaymentFailureDialog(parsedResult?.statusMessage)
-            Log.d(TAG, "handlePaymentAppResult: payment failed")
-        }
-
-    }
-
-    fun iciciPayment(context: Context, saleRequest: JSONObject): String {
-
-//        val intent = Intent()
-//        intent.component = ComponentName(
-//            "com.icici.viz.smartpeak",
-//            "vizpay.launchermodule.VizLauncherActivity"
-//        )
+        val intent = Intent()
+        intent.component = ComponentName(
+            "com.icici.viz.smartpeak",
+            "vizpay.launchermodule.VizLauncherActivity"
+        )
 //
 //
 //        val jsonData = JSONObject()
 //        jsonData.put("AMOUNT", "");
-//
-//
-//
-//        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK
-//        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-//        intent.putExtra("REQUEST_TYPE", "SALE")
-//        intent.putExtra("DATA", saleRequest.toString())
-//        context.startActivity(intent)
+        intent.putExtra("REQUEST_TYPE", "SALE")
+        intent.putExtra("DATA", saleRequest.toString())
 
+        startActivityForResult(intent, REQUESTCODE)
 
 
 //        CommonFunctions.printLog("json", saleRequest.toString())
 
-        var launchIntent: Intent? = null
-//        val gson = Gson()
-//        val addToCardJsonData = gson.toJson(dao?.getAllCartItems())
+//        var launchIntent: Intent? = null
+//
+//
+////        CommonFunctions.printLog("asdfghj", addToCardJsonData.toString())
+//        val packageManager: PackageManager = context.packageManager
+//        launchIntent = packageManager.getLaunchIntentForPackage("com.icici.viz.smartpeak")
+//        launchIntent?.flags = 0;
+//        launchIntent?.putExtra("REQUEST_TYPE", "SALE");
+//        launchIntent?.putExtra("DATA", saleRequest.toString());
+////        launchIntent?.putExtra("jsonData", addToCardJsonData);
+//        if (launchIntent != null) {
+////            resultLauncher.launch(launchIntent)
+//
+////            startActivityForResult(launchIntent, REQUESTCODE)
+//            context.startActivity(launchIntent)
+//        }
 
-//        CommonFunctions.printLog("asdfghj", addToCardJsonData.toString())
-        val packageManager: PackageManager = context.packageManager
-        launchIntent = packageManager.getLaunchIntentForPackage("com.icici.viz.smartpeak")
-        launchIntent?.flags = 0;
-        launchIntent?.putExtra("REQUEST_TYPE", "SALE");
-        launchIntent?.putExtra("DATA", saleRequest.toString());
-//        launchIntent?.putExtra("jsonData", addToCardJsonData);
-        if (launchIntent != null) {
-            resultLauncher.launch(launchIntent)
-        }
-
-
-
-        return try {
-
-            saleRequest.toString()
-
-        } catch (e: Exception) {
-            e.printStackTrace()
-            "Error occurred while initiating payment"
-        }
     }
     
     
@@ -164,14 +223,12 @@ class MainActivity: FlutterActivity() {
                 val data = call.argument<Map<String, Any>>("data")
                 data?.let {
                     val saleRequest = JSONObject(it)
-
+                    resultMethodChannel = result
                     // Call the method to start ICICI payment
 //                    val paymentResult = payment.iciciPayment(this@MainActivity, saleRequest)
 
-                    val paymentResult = iciciPayment(this@MainActivity, saleRequest)
+                    iciciPayment(this@MainActivity, saleRequest)
 
-                    // Send back the result to Flutter
-                    result.success(paymentResult)
                 } ?: run {
                     result.error("INVALID_ARGUMENTS", "Missing payment data", null)
                 }

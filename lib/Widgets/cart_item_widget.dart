@@ -1,3 +1,4 @@
+import 'package:cash_register/Widgets/network_image_widget.dart';
 import 'package:cash_register/common_utils/common_functions.dart';
 import 'package:cash_register/db/sqfLite_db_service.dart';
 import 'package:cash_register/helper/stream_helper.dart';
@@ -162,17 +163,22 @@ class _CartItemWidgetState extends State<CartItemWidget> {
           crossAxisAlignment: CrossAxisAlignment.center,
           // mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.horizontal(
-                left: Radius.circular(16),
-              ),
-              child: Image.network(
-                "${Environment.imageBaseUrl}${widget.cartItem.image}",
-                // product.image,
-                width: width * 0.15,
-                height: width * 0.15,
-                fit: BoxFit.fill,
-              ),
+            // ClipRRect(
+            //   borderRadius: const BorderRadius.horizontal(
+            //     left: Radius.circular(16),
+            //   ),
+            //   child: Image.network(
+            //     "${Environment.imageBaseUrl}${widget.cartItem.image}",
+            //     // product.image,
+            //     width: width * 0.15,
+            //     height: width * 0.15,
+            //     fit: BoxFit.fill,
+            //   ),
+            // ),
+            SizedBox(
+              width: width * 0.15,
+              height: width * 0.15,
+              child: NetworkImageWidget(image: widget.cartItem.image),
             ),
 
             CartSummaryItemDetailsWidget(

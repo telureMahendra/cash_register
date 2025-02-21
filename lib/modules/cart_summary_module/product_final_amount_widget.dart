@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:cash_register/Widgets/all_dialog.dart';
+import 'package:cash_register/common_utils/assets_path.dart';
 import 'package:cash_register/common_utils/common_functions.dart';
 import 'package:cash_register/common_utils/strings.dart';
 import 'package:cash_register/db/sqfLite_db_service.dart';
@@ -112,8 +115,7 @@ class _ProductFinalAmountWidgetState extends State<ProductFinalAmountWidget> {
 
     saveTransactionSqlite(
         "CASH", await dbs.getCartTotal(), printHelper.sourceProduct, true);
-
-    clearCart();
+    showSuccessfulPaymentDialog(context, await dbs.getCartTotal(), true, false);
   }
 
   showQr() {
@@ -124,7 +126,6 @@ class _ProductFinalAmountWidgetState extends State<ProductFinalAmountWidget> {
   payCard() async {
     print("card clicked");
     const platform = MethodChannel('printMethod');
-
     try {
       final saleRequest = {
         "AMOUNT": await dbs.getCartTotal(),
@@ -132,8 +133,7 @@ class _ProductFinalAmountWidgetState extends State<ProductFinalAmountWidget> {
         "TRAN_TYPE": "SALE",
         "BILL_NUMBER": "abc123",
         "SOURCE_ID": "abcd",
-        "PRINT_FLAG": "1",
-        "UDF1": "Rs.",
+        "PRINT_FLAG": "0",
         "UDF2": "",
         "UDF3": "",
         "UDF4": "",
@@ -144,9 +144,17 @@ class _ProductFinalAmountWidgetState extends State<ProductFinalAmountWidget> {
       // await platform.invokeMethod('paymentMethod', {"data": saleRequest});
       var response =
           await platform.invokeMethod('paymentMethod', {"data": saleRequest});
-      print("response from method : $response");
+      Map<String, dynamic> responseMap = jsonDecode(response);
+
+      printRecieptP300("CARD");
+
+      showSuccessfulPaymentDialog(
+          context, await dbs.getCartTotal(), true, false);
     } on PlatformException catch (e) {
-      print("Failed to make payment: ${e.message}");
+      Map<String, dynamic> responseMap = jsonDecode(e.message.toString());
+
+      showSuccessFailDialog(context, invalidAnimationPath,
+          '${responseMap["STATUS_CODE"]}-${responseMap["STATUS_MSG"]}');
     }
   }
 
