@@ -9,6 +9,7 @@ import 'package:cash_register/profile.dart';
 import 'package:cash_register/transactions_history.dart';
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Homepage extends StatefulWidget {

@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:cash_register/common_utils/common_functions.dart';
+import 'package:cash_register/common_utils/strings.dart';
 import 'package:cash_register/model/environment.dart';
 import 'package:custom_image_crop/custom_image_crop.dart';
 import 'package:flutter/material.dart';
@@ -86,7 +88,7 @@ class _AddproductState extends State<Addproduct> {
             children: <Widget>[
               ListTile(
                 leading: const Icon(Icons.photo_library),
-                title: const Text('Photo Library'),
+                title: const Text(textPhotoLibrary),
                 onTap: () {
                   getImage(ImageSource.gallery);
                   Navigator.of(context).pop();
@@ -94,7 +96,7 @@ class _AddproductState extends State<Addproduct> {
               ),
               ListTile(
                 leading: const Icon(Icons.photo_camera),
-                title: const Text('Camera'),
+                title: const Text(textCamera),
                 onTap: () {
                   getImage(ImageSource.camera);
                   Navigator.of(context).pop();
@@ -126,7 +128,7 @@ class _AddproductState extends State<Addproduct> {
           // loadImage();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Nothing is selected')));
+              const SnackBar(content: Text(textNothingIsSelected)));
         }
       },
     );
@@ -218,25 +220,6 @@ class _AddproductState extends State<Addproduct> {
       ),
     );
   }
-
-  String convertIntoBase64(File file) {
-    List<int> imageBytes = file.readAsBytesSync();
-    String base64File = base64Encode(imageBytes);
-    return base64File;
-  }
-
-  String convertIntoBase64FromMemoryImage(MemoryImage file) {
-    // List<int> imageBytes = file.readAsBytesSync();
-    List<int> imageBytes = file.bytes;
-    String base64File = base64Encode(imageBytes);
-    return base64File;
-  }
-
-  // storeImage() async {
-  // final prefs = await SharedPreferences.getInstance();
-  // prefs.setString("productIam", convertIntoBase64(galleryFile!));
-  // loadImage();
-  // }
 
   loadImage() async {
     image = convertIntoBase64(galleryFile!);

@@ -1,6 +1,7 @@
 import 'package:cash_register/Widgets/all_dialog.dart';
 import 'package:cash_register/common_utils/assets_path.dart';
 import 'package:cash_register/common_utils/common_functions.dart';
+import 'package:cash_register/common_utils/strings.dart';
 import 'package:cash_register/db/sqfLite_db_service.dart';
 import 'package:cash_register/helper/printe_helper.dart';
 import 'package:flutter/cupertino.dart';
@@ -45,8 +46,8 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
 
   void loadData() async {
     final prefs = await SharedPreferences.getInstance();
-    businessName = prefs.getString("businessName") ?? "";
-    upiID = prefs.getString("upiID") ?? "";
+    businessName = prefs.getString(businessNameKey) ?? "";
+    upiID = prefs.getString(upiIDKey) ?? "";
     setState(() {});
 
     print("Data Fetched ");
@@ -88,7 +89,7 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                 //   size: 200,
                 // ),
                 Text(
-                  "Complete Your Payment",
+                  textCompleteYourPayment,
                   style: TextStyle(
                       color: Colors.black,
                       fontSize: getAdaptiveTextSize(context, 13)),
@@ -118,7 +119,7 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                 Container(
                   padding: EdgeInsets.only(bottom: height * 0.005),
                   child: Text(
-                    'Scan and pay using UPI app',
+                    textScanAndPayUsingUPIapp,
                     style: TextStyle(
                         color: Colors.black,
                         fontSize: getAdaptiveTextSize(context, 15)),
@@ -127,7 +128,7 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                 Code(
                   height: height * 0.25,
                   data:
-                      "upi://pay?pa=$upiID&pn=$businessName&mc=0000&tn=Bill%20Payment&am=${double.parse(widget.amount)}&cu=INR",
+                      "upi://pay?pa=$upiID&pn=$businessName&mc=0000&tn=Bill%20Payment&am=${double.parse(widget.amount)}&cu=$currencyName",
                   // "upi://pay?pa=9561051485@axl&pn=Mahendra%20Telure&mc=0000&mode=02&purpose=00&am=10",
                   codeType: CodeType.qrCode(),
                 ),
@@ -135,7 +136,7 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                   padding: EdgeInsets.only(
                       top: height * 0.005, bottom: height * 0.005),
                   child: Text(
-                    'UPI ID: $upiID',
+                    '$textUpiId: $upiID',
                     style: TextStyle(
                         color: Colors.black,
                         fontSize: getAdaptiveTextSize(context, 15)),
@@ -148,11 +149,11 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Image.asset(
-                            "assets/images/bhim_tra.png",
+                            bhimLogoPath,
                             height: height * 0.02,
                           ),
                           Image.asset(
-                            "assets/images/upi_tra.png",
+                            upiLogoPath,
                             height: height * 0.02,
                           ),
                         ],
@@ -183,14 +184,14 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                               width: width * 0.98,
                               child: Column(
                                 children: [
-                                  Lottie.asset('assets/animations/warning.json',
+                                  Lottie.asset(warningAnimationPath,
                                       height:
                                           MediaQuery.of(context).size.height *
                                               0.17,
                                       repeat: true,
                                       animate: true),
                                   Text(
-                                    "Transaction Timeout!",
+                                    textTransactionTimeout,
                                     style: TextStyle(
                                         color: Colors.red,
                                         fontSize:
@@ -239,10 +240,10 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                                                 //     widget.amount,
                                                 //     false,
                                                 //     false);
-                                                printReciept("QR/UPI");
+                                                printReciept(textButtonQrUpi);
                                               },
                                               child: Text(
-                                                "Print Receipt",
+                                                textPrintReceipt,
                                                 style: TextStyle(
                                                     color: Colors.white,
                                                     fontSize:
@@ -269,7 +270,7 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                                                 Navigator.pop(context);
                                               },
                                               child: Text(
-                                                "Back To Home",
+                                                textBackToHome,
                                                 style: TextStyle(
                                                     color: Colors.black,
                                                     fontSize:
@@ -297,7 +298,7 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
             child: Padding(
               padding: EdgeInsets.only(bottom: height * 0.01),
               child: Text(
-                "Check Payment Application: If a payment notification is received, print a receipt.",
+                textCheckPaymentApplicationIfAPaymentNotificationIsReceivedPrintAReceipt,
                 style: TextStyle(
                   color: Colors.red,
                   fontSize: getAdaptiveTextSize(context, 12),
@@ -326,7 +327,7 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                     color: const Color.fromARGB(255, 58, 104, 125),
                   ),
                   Text(
-                    'Print Receipt',
+                    textPrintReceipt,
                     style: TextStyle(
                         color: Colors.black,
                         fontSize: getAdaptiveTextSize(context, 15)),
@@ -335,7 +336,7 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
               ),
               onPressed: () {
                 Navigator.of(context).pop();
-                printReciept("QR/UPI");
+                printReciept(textButtonQrUpi);
               },
             ),
           ),
@@ -362,7 +363,7 @@ class _QrCodeWidgetState extends State<QrCodeWidget> {
                     color: const Color.fromARGB(255, 58, 104, 125),
                   ),
                   Text(
-                    'Back To Home',
+                    textBackToHome,
                     style: TextStyle(
                         color: Colors.black,
                         fontSize: getAdaptiveTextSize(context, 15)),

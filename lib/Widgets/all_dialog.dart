@@ -1,5 +1,6 @@
 import 'package:cash_register/common_utils/assets_path.dart';
 import 'package:cash_register/common_utils/common_functions.dart';
+import 'package:cash_register/common_utils/strings.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -37,7 +38,7 @@ void showSuccessFailDialog(
       actions: [
         TextButton(
           child: Text(
-            'Ok',
+            textOk,
             style: TextStyle(fontSize: getAdaptiveTextSize(context, 15)),
           ),
           onPressed: () {
@@ -55,7 +56,7 @@ showSuccessfulPaymentDialog(BuildContext context, String amount,
   double width = size.width;
   double height = size.height;
   final prefs = await SharedPreferences.getInstance();
-  var recieptSwitch = prefs.getBool("recieptSwitch") ?? false;
+  var recieptSwitch = prefs.getBool(printRecieptSwitchKeyName) ?? false;
 
   if (recieptSwitch) {
     // printhelper.printThermalReciept(
@@ -73,12 +74,12 @@ showSuccessfulPaymentDialog(BuildContext context, String amount,
         width: width * 0.70,
         child: Column(
           children: [
-            Lottie.asset('assets/animations/check_animation.json',
+            Lottie.asset(successAnimationPath,
                 height: height * 0.10, repeat: false, animate: true),
             Container(
               padding: EdgeInsets.only(bottom: 0),
               child: Text(
-                'Payment Successful',
+                textPaymentSuccessful,
                 style: TextStyle(
                   color: Colors.green,
                   fontSize: getAdaptiveTextSize(context, 20),
@@ -111,7 +112,7 @@ showSuccessfulPaymentDialog(BuildContext context, String amount,
                       color: const Color.fromARGB(255, 58, 104, 125),
                     ),
                     Text(
-                      'Back To Home',
+                      textBackToHome,
                       style: TextStyle(
                           color: Colors.black,
                           fontSize: getAdaptiveTextSize(context, 15)),
@@ -134,7 +135,6 @@ showSuccessfulPaymentDialog(BuildContext context, String amount,
                     //   clearCart(context);
                     // }
                   } else {
-                    Navigator.of(context).pop();
                     while (Navigator.canPop(context)) {
                       Navigator.pop(context);
                     }
@@ -191,16 +191,16 @@ Future<bool> showExitConfirmationDialog(BuildContext context) async {
   return (await showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text('Confirm Exit'),
-          content: Text('Do you want to exit the app?'),
+          title: Text(textConfirmExit),
+          content: Text(textDoYouWantToExitTheApp),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(context).pop(false), // No action
-              child: Text('No'),
+              child: Text(textNo),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(true), // Yes action
-              child: Text('Yes'),
+              child: Text(textYes),
             ),
           ],
         ),
@@ -214,16 +214,16 @@ Future<bool?> showBackDialog(BuildContext context) async {
   return showDialog<bool>(
     context: context,
     builder: (context) => AlertDialog(
-      title: new Text('Are you sure?'),
+      title: new Text(textAreYouSure),
       content: new Text(
-        'Do you want to exit an App',
+        textDoYouWantToExitTheApp,
         style: TextStyle(fontSize: getAdaptiveTextSize(context, 18)),
       ),
       actions: <Widget>[
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            Container(
+            SizedBox(
               width: width / 4,
               height: height * 0.05,
               child: ElevatedButton(
@@ -237,13 +237,13 @@ Future<bool?> showBackDialog(BuildContext context) async {
                 onPressed: () =>
                     // Navigator.of(context).pop(false), //<-- SEE HERE
                     Navigator.pop(context, false),
-                child: new Text(
-                  'No',
+                child: Text(
+                  textNo,
                   style: TextStyle(fontSize: getAdaptiveTextSize(context, 15)),
                 ),
               ),
             ),
-            Container(
+            SizedBox(
               width: width / 4,
               height: height * 0.05,
               child: ElevatedButton(
@@ -256,7 +256,7 @@ Future<bool?> showBackDialog(BuildContext context) async {
                 onPressed: () => Navigator.of(context).pop(true),
                 // Navigator.of(context).pop(true), // <-- SEE HERE
                 child: Text(
-                  'Yes',
+                  textYes,
                   style: TextStyle(fontSize: getAdaptiveTextSize(context, 15)),
                 ),
               ),

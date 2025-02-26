@@ -2,6 +2,7 @@ import 'package:cash_register/Widgets/username_card_widget.dart';
 import 'package:cash_register/connect_printer_print_bluetooth_thermal.dart';
 import 'package:cash_register/helper/connect_printer_blue_plus.dart';
 import 'package:cash_register/login.dart';
+import 'package:cash_register/modules/menu_list_module/list_item_widget.dart';
 
 import 'package:cash_register/profile.dart';
 import 'package:cash_register/settings.dart';
@@ -190,6 +191,11 @@ class _MenuWidgetState extends State<MenuWidget> {
                                 },
                               ));
                             }),
+                      ),
+                      ListItemWidget(
+                        text: "Text",
+                        onPressed: () {},
+                        icon: Icons.abc_rounded,
                       ),
                       Card(
                         elevation: 5,

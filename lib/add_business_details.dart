@@ -3,8 +3,15 @@ import 'dart:io';
 
 import 'package:carousel_slider/carousel_options.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:cash_register/Widgets/all_dialog.dart';
 import 'package:cash_register/Widgets/button.dart';
+import 'package:cash_register/Widgets/drop_down_selector_widget.dart';
+import 'package:cash_register/Widgets/dropdown_input.dart';
+import 'package:cash_register/Widgets/searchable_dropdown_widget.dart';
 import 'package:cash_register/Widgets/text_field.dart';
+import 'package:cash_register/common_utils/assets_path.dart';
+import 'package:cash_register/common_utils/common_functions.dart';
+import 'package:cash_register/common_utils/strings.dart';
 import 'package:cash_register/helper/helper.dart';
 import 'package:cash_register/calculator.dart';
 import 'package:cash_register/home_page.dart';
@@ -37,6 +44,8 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
 
   late bool isBusinessDetailsFound = false;
 
+  String businessCategory = '';
+
   @override
   void initState() {
     // checkBusinessDetailsFound();
@@ -54,7 +63,7 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
           Uri.parse('${Environment.baseUrl}/business'),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
-            'userId': '${prefs.getInt('userId')}',
+            'userId': '${prefs.getInt(userIdKey)}',
           },
         );
 
@@ -62,31 +71,36 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
           String responseString = utf8.decode(response.bodyBytes);
           Map<String, dynamic> jsonData = jsonDecode(responseString);
 
-          prefs.setBool("isBusinessDetailsFound", true);
-          prefs.setString('businessName', jsonData['businessName'] ?? '');
-          prefs.setString('address', jsonData['address'] ?? '');
-          prefs.setString('businessEmail', jsonData['email'] ?? '');
-          prefs.setString('businessMobile', jsonData['mobile'] ?? '');
-          prefs.setString('gstNumber', jsonData['gstNumber'] ?? '');
-          prefs.setString('ipiID', jsonData['upiID'] ?? '');
+          prefs.setBool(isBusinessDetailsFoundKey, true);
+          prefs.setString(businessNameKey, jsonData[businessNameKey] ?? '');
+          prefs.setString(addressKey, jsonData[addressKey] ?? '');
+          prefs.setString(businessEmailKey, jsonData[businessEmailKey] ?? '');
+          prefs.setString(businessMobileKey, jsonData[businessMobileKey] ?? '');
+          prefs.setString(gstNumberKey, jsonData[gstNumberKey] ?? '');
+          prefs.setString(upiIDKey, jsonData[upiIDKey] ?? '');
           // 'username', jsonData['username'] ?? ''
           // return TransactionDetails.fromJsonList(json.decode(response.body));
-          Navigator.pop(context);
-          showDialog<void>(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Success'),
-              content: Text('Details added Successfully'),
-              actions: [
-                TextButton(
-                  child: const Text('Ok'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            ),
-          );
+          if (context.mounted) {
+            Navigator.pop(context);
+
+            showSuccessFailDialog(
+                context, successAnimationPath, textDetailsAddedSuccessfully);
+          }
+          // showDialog<void>(
+          //   context: context,
+          //   builder: (context) => AlertDialog(
+          //     title: const Text('Success'),
+          //     content: Text('Details added Successfully'),
+          //     actions: [
+          //       TextButton(
+          //         child: const Text('Ok'),
+          //         onPressed: () {
+          //           Navigator.of(context).pop();
+          //         },
+          //       ),
+          //     ],
+          //   ),
+          // );
         } else {
           if (mounted) {
             print('${response.body.toString()} in add business');
@@ -96,39 +110,51 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
         }
       } on SocketException {
         // Handle network errors
-        Navigator.pop(context);
-        showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text('Network Error'),
-            actions: [
-              TextButton(
-                child: const Text('Ok'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
-        );
+        if (context.mounted) {
+          Navigator.pop(context);
+
+          showSuccessFailDialog(
+              context, warningAnimationPath, networkErrorMessage);
+        }
+
+        // showDialog<void>(
+        //   context: context,
+        //   builder: (context) => AlertDialog(
+        //     title: const Text('Error'),
+        //     content: Text('Network Error'),
+        //     actions: [
+        //       TextButton(
+        //         child: const Text('Ok'),
+        //         onPressed: () {
+        //           Navigator.of(context).pop();
+        //         },
+        //       ),
+        //     ],
+        //   ),
+        // );
       } catch (e) {
-        Navigator.pop(context);
-        showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text('Server Not Responding'),
-            actions: [
-              TextButton(
-                child: const Text('Ok'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
-        );
+        if (context.mounted) {
+          Navigator.pop(context);
+
+          showSuccessFailDialog(
+              context, warningAnimationPath, serverNotRespondingMessage);
+        }
+        // Navigator.pop(context);
+        // showDialog<void>(
+        //   context: context,
+        //   builder: (context) => AlertDialog(
+        //     title: const Text('Error'),
+        //     content: Text('Server Not Responding'),
+        //     actions: [
+        //       TextButton(
+        //         child: const Text('Ok'),
+        //         onPressed: () {
+        //           Navigator.of(context).pop();
+        //         },
+        //       ),
+        //     ],
+        //   ),
+        // );
       }
     }
   }
@@ -138,19 +164,23 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
 
     if (_formKey.currentState!.validate()) {
       try {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context) {
-            return const Center(child: CircularProgressIndicator());
-          },
-        );
+        // showDialog(
+        //   context: context,
+        //   barrierDismissible: false,
+        //   builder: (BuildContext context) {
+        //     return const Center(child: CircularProgressIndicator());
+        //   },
+        // );
+
+        if (context.mounted) {
+          showLoader(context);
+        }
 
         final response = await http.post(
           Uri.parse('${Environment.baseUrl}/business'),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
-            'userId': '${prefs.getInt('userId')}',
+            'userId': '${prefs.getInt(userIdKey)}',
           },
           body: jsonEncode(<String, dynamic>{
             'businessName': businessNameController.text.toString(),
@@ -166,15 +196,15 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
         if (response.statusCode == 201) {
           // If the server did return a 201 CREATED response,
           // then parse the JSON.
-          prefs.setBool("isBusinessDetailsFound", true);
+          prefs.setBool(isBusinessDetailsFoundKey, true);
           await prefs.setString(
-              'businessName', businessNameController.text.toString());
-          await prefs.setString('address', addressController.text.toString());
+              businessNameKey, businessNameController.text.toString());
+          await prefs.setString(addressKey, addressController.text.toString());
           await prefs.setString(
-              'businessEmail', emailController.text.toString());
+              businessEmailKey, emailController.text.toString());
           await prefs.setString(
-              'businessMobile', mobileController.text.toString());
-          await prefs.setString('upiID', upiIDController.text.toString());
+              businessMobileKey, mobileController.text.toString());
+          await prefs.setString(upiIDKey, upiIDController.text.toString());
 
           // Navigator.pop(context);
 
@@ -209,39 +239,52 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
         }
       } on SocketException {
         // Handle network errors
-        Navigator.pop(context);
-        showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text('Network Error'),
-            actions: [
-              TextButton(
-                child: const Text('Ok'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
-        );
+        if (context.mounted) {
+          Navigator.pop(context);
+
+          showSuccessFailDialog(
+              context, warningAnimationPath, networkErrorMessage);
+        }
+        // Navigator.pop(context);
+        // showDialog<void>(
+        //   context: context,
+        //   builder: (context) => AlertDialog(
+        //     title: const Text('Error'),
+        //     content: Text('Network Error'),
+        //     actions: [
+        //       TextButton(
+        //         child: const Text('Ok'),
+        //         onPressed: () {
+        //           Navigator.of(context).pop();
+        //         },
+        //       ),
+        //     ],
+        //   ),
+        // );
       } catch (e) {
-        Navigator.pop(context);
-        showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text('Server Not Responding'),
-            actions: [
-              TextButton(
-                child: const Text('Ok'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
-        );
+        if (context.mounted) {
+          Navigator.pop(context);
+
+          showSuccessFailDialog(
+              context, warningAnimationPath, serverNotRespondingMessage);
+        }
+
+        // Navigator.pop(context);
+        // showDialog<void>(
+        //   context: context,
+        //   builder: (context) => AlertDialog(
+        //     title: const Text('Error'),
+        //     content: Text('Server Not Responding'),
+        //     actions: [
+        //       TextButton(
+        //         child: const Text('Ok'),
+        //         onPressed: () {
+        //           Navigator.of(context).pop();
+        //         },
+        //       ),
+        //     ],
+        //   ),
+        // );
       }
     }
   }
@@ -250,7 +293,7 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Steps to Find UPI ID'),
+        title: const Text(textStepsToFindUpiId),
         content: SizedBox(
           height: height * 0.20,
           width: width,
@@ -259,83 +302,75 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
 
           //   ],
           // ),
-          child: Container(
-            // height: height * 0.70,
-            // width: width * 0.70,
-            child: CarouselSlider(
-              items: [
-                //1st Image of Slider
-                Container(
-                  // margin: EdgeInsets.all(6.0),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8.0),
-                    image: DecorationImage(
-                      // image: NetworkImage("ADD IMAGE URL HERE"),
-                      image: AssetImage(
-                          "assets/images/find-upi-id-on-google-pay.png"),
-                      fit: BoxFit.cover,
-                    ),
+          child: CarouselSlider(
+            items: [
+              //1st Image of Slider
+              Container(
+                // margin: EdgeInsets.all(6.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8.0),
+                  image: DecorationImage(
+                    // image: NetworkImage("ADD IMAGE URL HERE"),
+                    image: AssetImage(findUpiIdGooglePayPath),
+                    fit: BoxFit.cover,
                   ),
                 ),
-
-                // 2nd Image of Slider
-                Container(
-                  // margin: EdgeInsets.all(6.0),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8.0),
-                    image: DecorationImage(
-                      // image: NetworkImage("ADD IMAGE URL HERE"),
-                      image:
-                          AssetImage("assets/images/find-upi-id-on-bhim.png"),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-
-                Container(
-                  // margin: EdgeInsets.all(6.0),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8.0),
-                    image: DecorationImage(
-                      // image: NetworkImage("ADD IMAGE URL HERE"),
-                      image:
-                          AssetImage("assets/images/find-upi-id-on-paytm.png"),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                Container(
-                  // margin: EdgeInsets.all(6.0),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8.0),
-                    image: DecorationImage(
-                      // image: NetworkImage("ADD IMAGE URL HERE"),
-                      image: AssetImage(
-                          "assets/images/find-upi-id-on-phone-pe.png"),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-              ],
-
-              //Slider Container properties
-              options: CarouselOptions(
-                height: 180.0,
-                enlargeCenterPage: true,
-                autoPlay: true,
-                aspectRatio: 16 / 9,
-                autoPlayCurve: Curves.fastOutSlowIn,
-                enableInfiniteScroll: true,
-                autoPlayAnimationDuration: Duration(milliseconds: 800),
-                viewportFraction: 0.8,
               ),
+
+              // 2nd Image of Slider
+              Container(
+                // margin: EdgeInsets.all(6.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8.0),
+                  image: DecorationImage(
+                    // image: NetworkImage("ADD IMAGE URL HERE"),
+                    image: AssetImage(findUpiIdBhimPath),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+
+              Container(
+                // margin: EdgeInsets.all(6.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8.0),
+                  image: DecorationImage(
+                    // image: NetworkImage("ADD IMAGE URL HERE"),
+                    image: AssetImage(findUpiIdpaytmPath),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              Container(
+                // margin: EdgeInsets.all(6.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8.0),
+                  image: DecorationImage(
+                    // image: NetworkImage("ADD IMAGE URL HERE"),
+                    image: AssetImage(findUpiIdPhoePayPath),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            ],
+
+            //Slider Container properties
+            options: CarouselOptions(
+              height: 180.0,
+              enlargeCenterPage: true,
+              autoPlay: true,
+              aspectRatio: 16 / 9,
+              autoPlayCurve: Curves.fastOutSlowIn,
+              enableInfiniteScroll: true,
+              autoPlayAnimationDuration: Duration(milliseconds: 800),
+              viewportFraction: 0.8,
             ),
           ),
         ),
         actions: [
           TextButton(
             child: Text(
-              'Ok',
+              textOk,
               style: TextStyle(fontSize: 20),
             ),
             onPressed: () {
@@ -347,6 +382,8 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
     );
   }
 
+  List<String> list = ["item 1", "item 2", "item 3", "item 4"];
+
   @override
   Widget build(BuildContext context) {
     size = MediaQuery.of(context).size;
@@ -355,7 +392,7 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
     return Scaffold(
         // resizeToAvoidBottomInset: false,
         appBar: AppBar(
-          title: Text("Business Details"),
+          title: Text(textBusinessDetails),
           centerTitle: false,
           backgroundColor: Colors.blue,
           foregroundColor: Colors.white,
@@ -371,26 +408,62 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
                 children: [
                   SizedBox(
                     height: height / 2.7,
-                    child: Image.asset('assets/images/business.png'),
+                    child: Image.asset(businessImagePath),
                   ),
+                  // DropDownSelectorWidget(
+                  //     hintText: "Select Business Category",
+                  //     list: list,
+                  //     listValue: ""),
+
+                  DropdownInput(
+                    hintText: "Select a Business Category",
+                    icon: Icons.list,
+                    items: [
+                      "department store",
+                      "Specialty stores",
+                      "Clothing",
+                      "Furniture",
+                      'Book Store',
+                      'Art Craft',
+                      "Beauty Stores",
+                      'Food',
+                      'Super Market',
+                      "Automobile Parts",
+                      "Boutiques",
+                      "Hardware Store",
+                      "Catalog retailing",
+                      "E-Commerce store",
+                      "retailers",
+                      "florist",
+                      "vegetable Market Shop",
+                      "Electronics",
+                    ],
+                    // selectedItem:
+                    // 'USA', // Optional: if you want to preselect an item
+                    onChanged: (selectedValue) {
+                      businessCategory = selectedValue!;
+                      print('Selected value: $businessCategory');
+                    },
+                  ),
+
                   TextFieldInput(
                     icon: Icons.business_center,
                     textEditingController: businessNameController,
-                    hintText: 'Business Name',
+                    hintText: textBusinessName,
                     textInputType: TextInputType.text,
                     length: 30,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter business name';
+                        return textPleaseEnterBusinessName;
                       }
                       if (value.length < 5) {
-                        return 'Business name should have atleast 5 characters';
+                        return textBusinessNameShouldHaveAtleastFiveCharacters;
                       }
                       return null;
                     },
                   ),
                   // Padding(
-                  //   padding: const EdgeInsets.symmetric(
+                  //   padding: const EdgeInab sets.symmetric(
                   //       vertical: 10, horizontal: 20),
                   //   child: Container(
                   //     width: width,
@@ -448,7 +521,7 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
                       decoration: InputDecoration(
                         prefixIcon:
                             Icon(Icons.account_balance, color: Colors.black54),
-                        hintText: 'Enter UPI ID',
+                        hintText: textEnterUpiId,
                         hintStyle: const TextStyle(
                             color: Colors.black45, fontSize: 18),
                         enabledBorder: OutlineInputBorder(
@@ -482,12 +555,12 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
                       autovalidateMode: AutovalidateMode.onUserInteraction,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter UPI ID';
+                          return textPleaseEnterUpiId;
                         }
                         final RegExp upiRegExp =
                             RegExp(r"^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{3,64}");
                         if (!upiRegExp.hasMatch(value)) {
-                          return 'Please enter a valid UPI ID';
+                          return textPleaseEnterValidUpiId;
                         }
                         return null;
                       },
@@ -505,16 +578,16 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Example UPI ID: username@bankname',
+                                textExampleUpiIdUsernameAtBankname,
                                 style: TextStyle(
                                   fontSize: 15,
                                   color: Colors.black45,
                                 ),
                               ),
-                              Container(
+                              SizedBox(
                                 width: width * 0.85,
                                 child: Text(
-                                  'Please note: Ensure you have entered a valid UPI ID. Incorrect UPI IDs may lead to payment issues, such as payments being received by someone else. We are not responsible for any issues arising from incorrect UPI ID entries.',
+                                  textAddUpiNote,
                                   style: TextStyle(
                                     fontSize: 16,
                                     color: Colors.black54,
@@ -530,7 +603,7 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
                   TextFieldInput(
                     icon: Icons.percent,
                     textEditingController: gstNumberController,
-                    hintText: 'GST Number(Optional)',
+                    hintText: textGSTNumberOptional,
                     textInputType: TextInputType.text,
                     length: 15,
                     validator: (value) {
@@ -540,7 +613,7 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
                   TextFieldInput(
                     icon: Icons.card_travel,
                     textEditingController: cinNumberController,
-                    hintText: 'CIN Number(Optional)',
+                    hintText: textCINNumberOptional,
                     textInputType: TextInputType.text,
                     length: 21,
                     validator: (value) {
@@ -550,7 +623,7 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
                   TextFieldInput(
                     icon: Icons.card_membership,
                     textEditingController: panNumberController,
-                    hintText: 'PAN Number(Optional)',
+                    hintText: textPANNumberOptional,
                     textInputType: TextInputType.text,
                     length: 10,
                     validator: (value) {
@@ -560,15 +633,15 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
                   TextFieldInput(
                     icon: Icons.place_rounded,
                     textEditingController: addressController,
-                    hintText: 'Adress',
+                    hintText: textAdress,
                     textInputType: TextInputType.text,
-                    length: 30,
+                    length: 100,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter address';
+                        return textPleaseEnterAddress;
                       }
                       if (value.length < 5) {
-                        return 'Please enter valid address';
+                        return textPleaseEnterValidAddress;
                       }
                       return null;
                     },
@@ -576,15 +649,15 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
                   TextFieldInput(
                     icon: Icons.call,
                     textEditingController: mobileController,
-                    hintText: 'Enter your number',
+                    hintText: textEnterYourNumber,
                     textInputType: TextInputType.number,
                     length: 10,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'Please enter your number';
+                        return textPleaseEnterYourNumber;
                       }
                       if (value.length != 10) {
-                        return 'Phone number must be 10 digits';
+                        return textPhoneNumberMustBeTenDigits;
                       }
                       // Add more email validation logic here if needed
                       return null;
@@ -593,23 +666,14 @@ class _AddBusinessDetailsState extends State<AddBusinessDetails> {
                   TextFieldInput(
                     icon: Icons.email,
                     textEditingController: emailController,
-                    hintText: 'Enter your email',
+                    hintText: textEnterYourEmail,
                     textInputType: TextInputType.text,
                     length: 50,
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      final RegExp emailRegExp = RegExp(
-                          r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$");
-                      if (!emailRegExp.hasMatch(value)) {
-                        return 'Please enter a valid email address';
-                      }
-                      // Add more email validation logic here if needed
-                      return null;
+                      return validateEmail(value);
                     },
                   ),
-                  MyButtons(onTap: addBusinessDetails, text: "Add Details"),
+                  MyButtons(onTap: addBusinessDetails, text: textAddDetails),
                   const SizedBox(height: 10),
                 ],
               ),

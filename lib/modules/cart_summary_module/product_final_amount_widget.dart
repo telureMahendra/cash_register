@@ -54,7 +54,8 @@ class _ProductFinalAmountWidgetState extends State<ProductFinalAmountWidget> {
       saveTransactionSqlite(
           method, await dbs.getCartTotal(), printHelper.sourceProduct, true);
       // deleteAllProducts(context, true, false);
-
+      showSuccessfulPaymentDialog(
+          context, await dbs.getCartTotal(), true, false);
       // Navigator.pop(context);
     });
   }
@@ -114,23 +115,27 @@ class _ProductFinalAmountWidgetState extends State<ProductFinalAmountWidget> {
     prefs.setInt("invProdCounter", invProdCounter++);
 
     saveTransactionSqlite(
-        "CASH", await dbs.getCartTotal(), printHelper.sourceProduct, true);
+        method, await dbs.getCartTotal(), printHelper.sourceProduct, true);
     showSuccessfulPaymentDialog(context, await dbs.getCartTotal(), true, false);
   }
 
-  showQr() {
-    showProductQrCodeDialog(
-        context, total, "QR/UPI", printHelper.sourceProduct, true);
+  showQr() async {
+    if (await getDeviceModel() == "P3000") {
+      payUsingPaymentApp("QR");
+    } else {
+      showProductQrCodeDialog(
+          context, total, "QR/UPI", printHelper.sourceProduct, true);
+    }
   }
 
-  payCard() async {
+  payUsingPaymentApp(String tranType) async {
     print("card clicked");
     const platform = MethodChannel('printMethod');
     try {
       final saleRequest = {
         "AMOUNT": await dbs.getCartTotal(),
         // "TIP_AMOUNT": "0",
-        "TRAN_TYPE": "SALE",
+        "TRAN_TYPE": tranType,
         "BILL_NUMBER": "abc123",
         "SOURCE_ID": "abcd",
         "PRINT_FLAG": "0",
@@ -142,11 +147,17 @@ class _ProductFinalAmountWidgetState extends State<ProductFinalAmountWidget> {
 
       // Invoke the method on Android to start the payment process
       // await platform.invokeMethod('paymentMethod', {"data": saleRequest});
-      var response =
-          await platform.invokeMethod('paymentMethod', {"data": saleRequest});
+      var response = await platform.invokeMethod('paymentMethod', {
+        "data": saleRequest,
+        "TRAN_TYPE": tranType,
+      });
+
       Map<String, dynamic> responseMap = jsonDecode(response);
 
-      printRecieptP300("CARD");
+      // printReciept(tranType == requestQr ? textButtonQrUpi : textButtonCard);
+
+      printRecieptP300(
+          tranType == requestQr ? textButtonQrUpi : textButtonCard);
 
       showSuccessfulPaymentDialog(
           context, await dbs.getCartTotal(), true, false);
@@ -157,6 +168,43 @@ class _ProductFinalAmountWidgetState extends State<ProductFinalAmountWidget> {
           '${responseMap["STATUS_CODE"]}-${responseMap["STATUS_MSG"]}');
     }
   }
+
+  // payCard() async {
+  //   print("card clicked");
+  //   const platform = MethodChannel('printMethod');
+  //   try {
+  //     final saleRequest = {
+  //       "AMOUNT": await dbs.getCartTotal(),
+  //       // "TIP_AMOUNT": "0",
+  //       "TRAN_TYPE": "SALE",
+  //       "BILL_NUMBER": "abc123",
+  //       "SOURCE_ID": "abcd",
+  //       "PRINT_FLAG": "0",
+  //       "UDF2": "",
+  //       "UDF3": "",
+  //       "UDF4": "",
+  //       "UDF5": "",
+  //     };
+
+  //     // Invoke the method on Android to start the payment process
+  //     // await platform.invokeMethod('paymentMethod', {"data": saleRequest});
+  //     var response = await platform.invokeMethod('paymentMethod', {
+  //       "data": saleRequest,
+  //       "TRAN_TYPE": "SALE",
+  //     });
+  //     Map<String, dynamic> responseMap = jsonDecode(response);
+
+  //     printRecieptP300("CARD");
+
+  //     showSuccessfulPaymentDialog(
+  //         context, await dbs.getCartTotal(), true, false);
+  //   } on PlatformException catch (e) {
+  //     Map<String, dynamic> responseMap = jsonDecode(e.message.toString());
+
+  //     showSuccessFailDialog(context, invalidAnimationPath,
+  //         '${responseMap["STATUS_CODE"]}-${responseMap["STATUS_MSG"]}');
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -421,7 +469,7 @@ class _ProductFinalAmountWidgetState extends State<ProductFinalAmountWidget> {
                                                                     iconData: Icons
                                                                         .money,
                                                                     buttonText:
-                                                                        cashButtonText,
+                                                                        textButtonCash,
                                                                     onPressed:
                                                                         () async {
                                                                       if (await getDeviceModel() ==
@@ -439,7 +487,7 @@ class _ProductFinalAmountWidgetState extends State<ProductFinalAmountWidget> {
                                                                     iconData: Icons
                                                                         .qr_code,
                                                                     buttonText:
-                                                                        upiQrCodeButtonText,
+                                                                        textButtonQrUpi,
                                                                     onPressed:
                                                                         () {
                                                                       showQr();
@@ -470,10 +518,11 @@ class _ProductFinalAmountWidgetState extends State<ProductFinalAmountWidget> {
                                                                             iconData: Icons
                                                                                 .credit_card,
                                                                             buttonText:
-                                                                                cardButtonText,
+                                                                                textButtonCard,
                                                                             onPressed:
                                                                                 () {
-                                                                              payCard();
+                                                                              // payCard();
+                                                                              payUsingPaymentApp(requestSale);
                                                                             });
                                                                       }
                                                                     }

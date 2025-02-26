@@ -47,14 +47,6 @@ class MainActivity: FlutterActivity() {
 
         Log.d(TAG, "onActivityResult: getting result from activity")
 
-//        if (requestCode == REQUESTCODE){
-//            val result = data?.getStringExtra("RESULT")
-//            Log.d(TAG, "onActivityResult: Data received from payment app")
-//            Log.d(TAG, "onActivityResult: result codde is : $resultCode")
-//            resultMethodChannel?.success(result)
-//        }
-
-        Toast.makeText(this, "Received result: ${resultCode.toString()}", Toast.LENGTH_SHORT).show()
 
 
         var bundle: Bundle? = null
@@ -64,10 +56,15 @@ class MainActivity: FlutterActivity() {
             e.printStackTrace()
         }
 
+        if (requestCode == REQUESTCODE){
+
+            Log.d(TAG, "onActivityResult: Data received from payment app")
+            Log.d(TAG, "onActivityResult: result codde is : $resultCode")
+
+
+
         val root: JSONObject = JSONObject(bundle!!.getString("RESULT"))
 
-
-//        root = JSONObject(bundle!!.getString("RESULT").toString())
         val RESPONSE_TYPE = root.getString("RESPONSE_TYPE")
         val STATUS_CODE = root.getString("STATUS_CODE")
         var STATUS_MSG = root.getString("STATUS_MSG")
@@ -76,27 +73,17 @@ class MainActivity: FlutterActivity() {
             "onActivityResult: " + RESPONSE_TYPE + " " + STATUS_CODE + "STATUS_MSG" + STATUS_MSG
         )
 
-
-
-
-
-//        if (root.has("RECEIPT_DATA")) {
-//
-//            receiptData = root.getJSONObject("RECEIPT_DATA")
-//        }
-
-
-
         if (root.getString("STATUS_CODE").contentEquals("00")
         )
          {
             val result = data?.getStringExtra("RESULT")
             Log.d(TAG, "onActivityResult: Payment Completed")
             resultMethodChannel?.success(result)
-        }else{
+        }else {
             Log.d(TAG, "onActivityResult: Payment failed")
             val result = data?.getStringExtra("RESULT")
             resultMethodChannel?.error("TRANSACTION_FAILED", result, null)
+        }
         }
     }
 
@@ -129,41 +116,18 @@ class MainActivity: FlutterActivity() {
 //
 //    }
 
-    fun iciciPayment(context: Context, saleRequest: JSONObject) {
+    fun iciciPayment(context: Context, saleRequest: JSONObject, TRAN_TYPE:String) {
 
         val intent = Intent()
         intent.component = ComponentName(
             "com.icici.viz.smartpeak",
             "vizpay.launchermodule.VizLauncherActivity"
         )
-//
-//
-//        val jsonData = JSONObject()
-//        jsonData.put("AMOUNT", "");
-        intent.putExtra("REQUEST_TYPE", "SALE")
+
+        intent.putExtra("REQUEST_TYPE", TRAN_TYPE)
         intent.putExtra("DATA", saleRequest.toString())
 
         startActivityForResult(intent, REQUESTCODE)
-
-
-//        CommonFunctions.printLog("json", saleRequest.toString())
-
-//        var launchIntent: Intent? = null
-//
-//
-////        CommonFunctions.printLog("asdfghj", addToCardJsonData.toString())
-//        val packageManager: PackageManager = context.packageManager
-//        launchIntent = packageManager.getLaunchIntentForPackage("com.icici.viz.smartpeak")
-//        launchIntent?.flags = 0;
-//        launchIntent?.putExtra("REQUEST_TYPE", "SALE");
-//        launchIntent?.putExtra("DATA", saleRequest.toString());
-////        launchIntent?.putExtra("jsonData", addToCardJsonData);
-//        if (launchIntent != null) {
-////            resultLauncher.launch(launchIntent)
-//
-////            startActivityForResult(launchIntent, REQUESTCODE)
-//            context.startActivity(launchIntent)
-//        }
 
     }
     
@@ -192,6 +156,7 @@ class MainActivity: FlutterActivity() {
             var items = args["items"];
             var count = args["count"].toString();
             var method = args["method"].toString();
+            val TRAN_TYPE = args["TRAN_TYPE"].toString();
 
 
 //            Toast.makeText(context, "count is : $count and method is $method", Toast.LENGTH_SHORT).show()
@@ -227,7 +192,7 @@ class MainActivity: FlutterActivity() {
                     // Call the method to start ICICI payment
 //                    val paymentResult = payment.iciciPayment(this@MainActivity, saleRequest)
 
-                    iciciPayment(this@MainActivity, saleRequest)
+                    iciciPayment(this@MainActivity, saleRequest, TRAN_TYPE)
 
                 } ?: run {
                     result.error("INVALID_ARGUMENTS", "Missing payment data", null)

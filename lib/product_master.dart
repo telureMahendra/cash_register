@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:add_to_cart_animation/add_to_cart_animation.dart';
+import 'package:cash_register/DynamicFormPage.dart';
 import 'package:cash_register/Widgets/network_image_widget.dart';
 import 'package:cash_register/add_product.dart';
 import 'package:cash_register/common_utils/common_functions.dart';
@@ -182,9 +183,14 @@ class _ProductMasterState extends State<ProductMaster> {
             onPressed: () {
               Navigator.push(context, MaterialPageRoute(
                 builder: (context) {
-                  return Addproduct();
+                  return DynamicFormPage();
                 },
               ));
+              // Navigator.push(context, MaterialPageRoute(
+              //   builder: (context) {
+              //     return Addproduct();
+              //   },
+              // ));
             },
           ),
         ),

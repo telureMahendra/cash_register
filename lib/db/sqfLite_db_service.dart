@@ -123,8 +123,6 @@ class DatabaseService {
       whereArgs: [productId],
     );
     if (existingProduct.isNotEmpty) {
-      print('Product found in the cart.');
-
       await db.update(
         dbTableCart,
         {

@@ -115,11 +115,6 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
   Future<List<dynamic>> combineData() async {
     var box = await openTransactionBox();
 
-    String currentDate = DateFormat('yMMMd')
-        .format(DateTime.now())
-        .toString(); // Format: "Feb 11, 2025"
-    // Check if the box contains cached data and a date
-
     Future<List> data = _fetchData();
     print("data loaded from the sqlite");
     Future<List> data1 = fetchTransactionServer();
@@ -678,8 +673,17 @@ class _TransactionsHistoryState extends State<TransactionsHistory> {
                                                       Icons.money,
                                                       size: width * 0.10,
                                                     ),
-                                                  if (transaction.method !=
-                                                      "CASH")
+                                                  if (transaction.method ==
+                                                      "CARD")
+                                                    Icon(
+                                                      Icons.credit_card,
+                                                      // size: width * 0.10,
+                                                      size: getadaptiveTextSize(
+                                                          context, 30),
+                                                    ),
+                                                  if (transaction.method
+                                                      .toString()
+                                                      .contains("QR"))
                                                     Icon(
                                                       Icons.qr_code,
                                                       // size: width * 0.10,

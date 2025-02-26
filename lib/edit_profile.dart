@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:cash_register/Widgets/button.dart';
 import 'package:cash_register/Widgets/text_field.dart';
+import 'package:cash_register/common_utils/common_functions.dart';
 import 'package:cash_register/helper/helper.dart';
 import 'package:cash_register/model/environment.dart';
 import 'package:cash_register/profile.dart';
@@ -219,13 +220,7 @@ class _EditProfileState extends State<EditProfile> {
                   textInputType: TextInputType.text,
                   length: 50,
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
-                    } else if (!value.contains('@') || !value.contains('.')) {
-                      return 'Please enter a valid email address';
-                    }
-                    // Add more email validation logic here if needed
-                    return null;
+                    return validateEmail(value);
                   },
                 ),
                 TextFieldInput(

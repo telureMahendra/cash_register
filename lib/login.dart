@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cash_register/common_utils/common_functions.dart';
 import 'package:cash_register/helper/helper.dart';
 import 'package:cash_register/calculator.dart';
 import 'package:cash_register/home_page.dart';
@@ -86,6 +87,7 @@ class _SignupScreenState extends State<LoginScreen> {
           },
         );
 
+        print("Base URL is: ${Environment.baseUrl}");
         final response = await http.post(
           Uri.parse('${Environment.baseUrl}/user/login'),
           headers: <String, String>{
@@ -278,16 +280,7 @@ class _SignupScreenState extends State<LoginScreen> {
                     textInputType: TextInputType.text,
                     length: 50,
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      final RegExp emailRegExp = RegExp(
-                          r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$");
-                      if (!emailRegExp.hasMatch(value)) {
-                        return 'Please enter a valid email address';
-                      }
-                      // Add more email validation logic here if needed
-                      return null;
+                      return validateEmail(value);
                     },
                   ),
                   // TextFieldInput(

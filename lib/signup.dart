@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cash_register/common_utils/common_functions.dart';
 import 'package:cash_register/helper/helper.dart';
 import 'package:cash_register/login.dart';
 import 'package:cash_register/calculator.dart';
@@ -257,13 +258,7 @@ class _SignUpState extends State<SignUp> {
               textInputType: TextInputType.text,
               length: 50,
               validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter your email';
-                } else if (!value.contains('@') || !value.contains('.')) {
-                  return 'Please enter a valid email address';
-                }
-                // Add more email validation logic here if needed
-                return null;
+                return validateEmail(value);
               },
             ),
             TextFieldInput(

@@ -31,9 +31,14 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # animations (loader, success, warning) 
   lottie: ^3.3.0
+  # Implemented spash animation
   animated_splash_screen: ^1.3.0
+  # Fetch HTTP requests on API's
   http: ^1.2.2
+
+  path_provider: ^2.1.5
   shared_preferences: ^2.3.5
   flutter_styled_toast: ^2.2.1
   sqflite: ^2.4.1

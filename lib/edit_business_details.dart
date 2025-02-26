@@ -5,6 +5,7 @@ import 'package:carousel_slider/carousel_options.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cash_register/Widgets/button.dart';
 import 'package:cash_register/Widgets/text_field.dart';
+import 'package:cash_register/common_utils/common_functions.dart';
 import 'package:cash_register/helper/helper.dart';
 import 'package:cash_register/calculator.dart';
 import 'package:cash_register/model/environment.dart';
@@ -538,16 +539,7 @@ class _EditBusinessDetailsState extends State<EditBusinessDetails> {
                     textInputType: TextInputType.text,
                     length: 50,
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      final RegExp emailRegExp = RegExp(
-                          r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,253}[a-zA-Z0-9])?)*$");
-                      if (!emailRegExp.hasMatch(value)) {
-                        return 'Please enter a valid email address';
-                      }
-                      // Add more email validation logic here if needed
-                      return null;
+                      return validateEmail(value);
                     },
                   ),
                   MyButtons(

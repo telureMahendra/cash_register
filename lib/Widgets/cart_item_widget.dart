@@ -1,5 +1,6 @@
 import 'package:cash_register/Widgets/network_image_widget.dart';
 import 'package:cash_register/common_utils/common_functions.dart';
+import 'package:cash_register/common_utils/strings.dart';
 import 'package:cash_register/db/sqfLite_db_service.dart';
 import 'package:cash_register/helper/stream_helper.dart';
 import 'package:cash_register/model/cart_item.dart';
@@ -88,7 +89,7 @@ class _CartItemWidgetState extends State<CartItemWidget> {
                     controller: priceEditContoller,
                     decoration: InputDecoration(
                       prefixIcon: Icon(Icons.money, color: Colors.black54),
-                      hintText: 'Product Price',
+                      hintText: textProductPrice,
                       hintStyle:
                           const TextStyle(color: Colors.black45, fontSize: 18),
                       enabledBorder: OutlineInputBorder(
@@ -121,7 +122,7 @@ class _CartItemWidgetState extends State<CartItemWidget> {
 
                       Navigator.pop(context);
                     },
-                    child: Text("Update"))
+                    child: Text(textUpdate))
               ],
             ),
           ),

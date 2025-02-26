@@ -1,5 +1,7 @@
 import 'package:cash_register/Widgets/all_dialog.dart';
+import 'package:cash_register/common_utils/assets_path.dart';
 import 'package:cash_register/common_utils/common_functions.dart';
+import 'package:cash_register/common_utils/strings.dart';
 import 'package:cash_register/db/sqfLite_db_service.dart';
 import 'package:cash_register/helper/printe_helper.dart';
 import 'package:cash_register/model/cart_item.dart';
@@ -45,8 +47,8 @@ class _ProductQrCodeWidgetState extends State<ProductQrCodeWidget> {
 
   void loadData() async {
     final prefs = await SharedPreferences.getInstance();
-    businessName = prefs.getString("businessName") ?? "";
-    upiID = prefs.getString("upiID") ?? "";
+    businessName = prefs.getString(businessNameKey) ?? "";
+    upiID = prefs.getString(upiIDKey) ?? "";
     setState(() {});
   }
 
@@ -58,10 +60,11 @@ class _ProductQrCodeWidgetState extends State<ProductQrCodeWidget> {
     saveTransactionSqlite(widget.method, widget.amount, widget.tranSource,
         widget.isDeviceConnected);
 
-    if (await getDeviceModel() == "P3000") {
-      printRecieptP300("QR/UPI");
+    if (await getDeviceModel() == deviceModelP000) {
+      printRecieptP300(textButtonQrUpi);
     } else {
-      printHelper.printProductReciept("QR/UPI", printHelper.sourceProduct);
+      printHelper.printProductReciept(
+          textButtonQrUpi, printHelper.sourceProduct);
     }
 
     showSuccessfulPaymentDialog(context, widget.amount, true, true);
@@ -93,25 +96,25 @@ class _ProductQrCodeWidgetState extends State<ProductQrCodeWidget> {
 
     amount = calculate(amount);
 
-    var invProdCounter = prefs.getInt("invProdCounter") ?? 1;
+    var invProdCounter = prefs.getInt(invProdCounterKey) ?? 1;
 
     bool status;
-    status = prefs.getBool('isLogoPrint') ?? false;
+    status = prefs.getBool(printLogoSwitchKeyName) ?? false;
     channel.invokeListMethod("printProductReceipt", {
-      "shopName": prefs.getString("businessName") ?? '',
-      "address": prefs.getString("address") ?? '',
-      "shopMobile": prefs.getString('businessMobile') ?? '',
-      "shopEmail": prefs.getString('businessEmail') ?? '',
-      "amount": '${inrFormat.format(double.parse(amount))}',
-      "gstNumber": prefs.getString('gstNumber') ?? '',
-      "isPrintGST": prefs.getBool('isPrintGST') ?? '',
-      "image": status ? prefs.getString('image') ?? '' : '',
+      "shopName": prefs.getString(businessNameKey) ?? '',
+      "address": prefs.getString(addressKey) ?? '',
+      "shopMobile": prefs.getString(businessMobileKey) ?? '',
+      "shopEmail": prefs.getString(businessEmailKey) ?? '',
+      "amount": inrFormat.format(double.parse(amount)),
+      "gstNumber": prefs.getString(gstNumberKey) ?? '',
+      "isPrintGST": prefs.getBool(printGstSwitchKeyName) ?? '',
+      "image": status ? prefs.getString(imageKey) ?? '' : '',
       "items": productString,
       "count": "Pro/${invProdCounter++}",
       "method": method
     });
 
-    prefs.setInt("invProdCounter", invProdCounter++);
+    prefs.setInt(invProdCounterKey, invProdCounter++);
 
     // saveTransactionSqlite(
     //     "CASH", await dbs.getCartTotal(), printHelper.sourceProduct, true);
@@ -138,7 +141,7 @@ class _ProductQrCodeWidgetState extends State<ProductQrCodeWidget> {
                 //   size: 200,
                 // ),
                 Text(
-                  "Complete Your Payment",
+                  textCompleteYourPayment,
                   style: TextStyle(
                       color: Colors.black,
                       fontSize: getAdaptiveTextSize(context, 13)),
@@ -168,7 +171,7 @@ class _ProductQrCodeWidgetState extends State<ProductQrCodeWidget> {
                 Container(
                   padding: EdgeInsets.only(bottom: height * 0.005),
                   child: Text(
-                    'Scan and pay using UPI app',
+                    textScanAndPayUsingUPIapp,
                     style: TextStyle(
                         color: Colors.black,
                         fontSize: getAdaptiveTextSize(context, 15)),
@@ -177,7 +180,7 @@ class _ProductQrCodeWidgetState extends State<ProductQrCodeWidget> {
                 Code(
                   height: height * 0.25,
                   data:
-                      "upi://pay?pa=$upiID&pn=$businessName&mc=0000&tn=Bill%20Payment&am=${double.parse(widget.amount)}&cu=INR",
+                      "upi://pay?pa=$upiID&pn=$businessName&mc=0000&tn=Bill%20Payment&am=${double.parse(widget.amount)}&cu=$currencyName",
                   // "upi://pay?pa=9561051485@axl&pn=Mahendra%20Telure&mc=0000&mode=02&purpose=00&am=10",
                   codeType: CodeType.qrCode(),
                 ),
@@ -185,7 +188,7 @@ class _ProductQrCodeWidgetState extends State<ProductQrCodeWidget> {
                   padding: EdgeInsets.only(
                       top: height * 0.005, bottom: height * 0.005),
                   child: Text(
-                    'UPI ID: $upiID',
+                    '$textUpiId: $upiID',
                     style: TextStyle(
                         color: Colors.black,
                         fontSize: getAdaptiveTextSize(context, 15)),
@@ -198,11 +201,11 @@ class _ProductQrCodeWidgetState extends State<ProductQrCodeWidget> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Image.asset(
-                            "assets/images/bhim_tra.png",
+                            bhimLogoPath,
                             height: height * 0.02,
                           ),
                           Image.asset(
-                            "assets/images/upi_tra.png",
+                            upiLogoPath,
                             height: height * 0.02,
                           ),
                         ],
@@ -233,14 +236,14 @@ class _ProductQrCodeWidgetState extends State<ProductQrCodeWidget> {
                               width: width * 0.98,
                               child: Column(
                                 children: [
-                                  Lottie.asset('assets/animations/warning.json',
+                                  Lottie.asset(warningAnimationPath,
                                       height:
                                           MediaQuery.of(context).size.height *
                                               0.17,
                                       repeat: true,
                                       animate: true),
                                   Text(
-                                    "Transaction Timeout!",
+                                    textTransactionTimeout,
                                     style: TextStyle(
                                         color: Colors.red,
                                         fontSize:
@@ -272,7 +275,7 @@ class _ProductQrCodeWidgetState extends State<ProductQrCodeWidget> {
                                                 pay();
                                               },
                                               child: Text(
-                                                "Print Receipt",
+                                                textPrintReceipt,
                                                 style: TextStyle(
                                                     color: Colors.white,
                                                     fontSize:
@@ -299,7 +302,7 @@ class _ProductQrCodeWidgetState extends State<ProductQrCodeWidget> {
                                                 Navigator.pop(context);
                                               },
                                               child: Text(
-                                                "Back To Home",
+                                                textBackToHome,
                                                 style: TextStyle(
                                                     color: Colors.black,
                                                     fontSize:
@@ -327,7 +330,7 @@ class _ProductQrCodeWidgetState extends State<ProductQrCodeWidget> {
             child: Padding(
               padding: EdgeInsets.only(bottom: height * 0.01),
               child: Text(
-                "Check Payment Application: If a payment notification is received, print a receipt.",
+                textCheckPaymentApplicationIfAPaymentNotificationIsReceivedPrintAReceipt,
                 style: TextStyle(
                   color: Colors.red,
                   fontSize: getAdaptiveTextSize(context, 12),
@@ -356,7 +359,7 @@ class _ProductQrCodeWidgetState extends State<ProductQrCodeWidget> {
                     color: const Color.fromARGB(255, 58, 104, 125),
                   ),
                   Text(
-                    'Print Receipt',
+                    textPrintReceipt,
                     style: TextStyle(
                         color: Colors.black,
                         fontSize: getAdaptiveTextSize(context, 15)),
@@ -399,7 +402,7 @@ class _ProductQrCodeWidgetState extends State<ProductQrCodeWidget> {
                     color: const Color.fromARGB(255, 58, 104, 125),
                   ),
                   Text(
-                    'Back To Home',
+                    textBackToHome,
                     style: TextStyle(
                         color: Colors.black,
                         fontSize: getAdaptiveTextSize(context, 15)),

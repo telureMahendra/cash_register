@@ -109,7 +109,7 @@ class _UsernameCardWidgetState extends State<UsernameCardWidget> {
                           padding: const EdgeInsets.only(left: 5, right: 5),
                         ),
                         child: Row(
-                          children: [Icon(Icons.edit), Text("Edit Profile")],
+                          children: [Icon(Icons.edit), Text(textEditProfile)],
                         ),
                       ),
                     )

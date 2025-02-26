@@ -8,3 +8,13 @@ const String networkErrorAnimationPath =
 const String invalidAnimationPath = "assets/animations/invalid.json";
 
 const String noImagePath = "assets/images/noImage.png";
+
+const String bhimLogoPath = "assets/images/bhim_tra.png";
+const String upiLogoPath = "assets/images/upi_tra.png";
+
+const String findUpiIdGooglePayPath =
+    "assets/images/find-upi-id-on-google-pay.png";
+const String findUpiIdBhimPath = "assets/images/find-upi-id-on-bhim.png";
+const String findUpiIdpaytmPath = "assets/images/find-upi-id-on-paytm.png";
+const String findUpiIdPhoePayPath = "assets/images/find-upi-id-on-phone-pe.png";
+const String businessImagePath = "assets/images/business.png";
